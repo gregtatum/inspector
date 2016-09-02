@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "budo index.js"
+    "start": "budo --dir docs --serve bundle.js src/index.js"
   },
   "author": "",
   "license": "ISC",
