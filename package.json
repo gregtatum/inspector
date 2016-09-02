@@ -1,0 +1,14 @@
+{
+  "name": "inspector-redux",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "budo index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "budo": "9.0.0"
+  }
+}
