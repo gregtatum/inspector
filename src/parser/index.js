@@ -19,12 +19,12 @@ const {
  * This file collects all of the functions that parse a stylesheet's text into a
  * data structure. The data structure is made up of objects from ./css-structs.js.
  */
-function parseStylesheet(styleSheetText) {
+function parseStyleSheet(styleSheetText) {
   const lexer = getCSSLexer(styleSheetText);
   return parseRules(lexer)
 }
 
-module.exports = parseStylesheet;
+module.exports = parseStyleSheet;
 
 function parseRules(lexer) {
   const rules = []

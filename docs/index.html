@@ -1,20 +1,39 @@
 <!DOCTYPE html>
-<html>
+<html class='theme-light'>
   <head>
     <meta charset="utf-8">
     <title>Inspector</title>
-    <style>
-      body {
-        font-family: sans-serif;
+    <link rel="stylesheet" href="style.css" charset="utf-8">
+    <style id="page-style">
+      .page-container {
+        background-color:#fff;
+        top: 0;
+        left: 0;
+        right: 40%;
+        bottom: 0;
+        position: absolute;
+      }
+      .page-container > * {
+        float: left;
+        width: 50px;
+        height: 50px;
+        background-color:#333;
+        margin: 1em;
+      }
+
+      .red-box {
+        background-color:#f00;
+      }
+
+      .blue-box {
+        background-color:#04f;
       }
     </style>
   </head>
   <body>
+    <div id='app'></div>
+
     <!-- Source here: https://github.com/TatumCreative/inspector -->
-    <p>
-      The following code is parsed into an object model. See the console for a big data
-      dump of what happened. The following stylesheet was parsed.
-    </p>
     <script src='bundle.js'></script>
   </body>
 </html>
