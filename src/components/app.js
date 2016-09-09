@@ -1,42 +1,58 @@
-const { DOM, createClass, createFactory } = require("react")
-const { connect } = require("react-redux")
+const {DOM, createClass, createFactory} = require("react");
+const {connect} = require("react-redux");
+const {getRule, getRuleDeclaration} = require("../accessors");
 
-const RulesSidebar = createFactory(require('./rules-sidebar'))
-const Page = createFactory(require('./page'))
+const RulesSidebar = createFactory(require("./rules-sidebar"))
+const Page = createFactory(require("./page"))
 
-const elementRulesActions = require("../actions/element-rules");
+const {
+  editDeclarationName,
+  editDeclarationValue,
+  setDeclarationName,
+  setDeclarationValue,
+  stopEditingDeclaration,
+  tabThroughDeclarations,
+  addPageStyleSheet,
+  focusOnRedBox,
+} = require("../actions/element-rules");
 
 const Inspector = createClass({
   displayName: "Inspector",
 
   componentWillMount() {
     const {dispatch} = this.props;
-    dispatch(elementRulesActions.addPageStyleSheet());
+    dispatch(addPageStyleSheet());
   },
 
   render() {
     const {
       dispatch,
-      elementRules,
+      elementRules: {
+        matchedRules,
+        styleSheets,
+        editing,
+        isEditingName,
+        isEditingValue,
+      }
     } = this.props
 
     return DOM.div({},
       Page({
-        focusOnRedBox: () => dispatch(elementRulesActions.focusOnRedBox())
+        focusOnRedBox: () => dispatch(focusOnRedBox())
       }),
       RulesSidebar({
-        rules: elementRules.matchedRules,
+        rules: matchedRules.map(id => getRule(styleSheets, id)),
         ruleProps: {
-          editing: elementRules.editing,
-          isEditingName: elementRules.isEditingName,
-          isEditingValue: elementRules.isEditingValue,
-          editName: (rule, declaration) => dispatch(elementRulesActions.editDeclarationName(rule, declaration)),
-          editValue: (rule, declaration) => dispatch(elementRulesActions.editDeclarationValue(rule, declaration)),
-          setName: (rule, declaration, name) => dispatch(elementRulesActions.setDeclarationName(rule, declaration, name)),
-          setValue: (rule, declaration, value) => dispatch(elementRulesActions.setDeclarationValue(rule, declaration, value)),
-          stopEditing: () => dispatch(elementRulesActions.stopEditingDeclaration()),
-          editNext: () => dispatch(elementRulesActions.tabThroughDeclarations(1)),
-          editPrevious: () => dispatch(elementRulesActions.tabThroughDeclarations(-1)),
+          editing: getRuleDeclaration(styleSheets, editing),
+          isEditingName: isEditingName,
+          isEditingValue: isEditingValue,
+          editName: (rule, declaration) => dispatch(editDeclarationName(rule, declaration)),
+          editValue: (rule, declaration) => dispatch(editDeclarationValue(rule, declaration)),
+          setName: (rule, declaration, name) => dispatch(setDeclarationName(rule, declaration, name)),
+          setValue: (rule, declaration, value) => dispatch(setDeclarationValue(rule, declaration, value)),
+          stopEditing: () => dispatch(stopEditingDeclaration()),
+          editNext: () => dispatch(tabThroughDeclarations(1)),
+          editPrevious: () => dispatch(tabThroughDeclarations(-1)),
         }
       })
     )

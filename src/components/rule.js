@@ -31,7 +31,6 @@ const Rule = createClass({
         declarations.map((declaration) => {
           const {name, value, id} = declaration;
           const isEditingThis = editing && declaration === editing.declaration;
-          console.log(id + name + value)
           return (
             div({className: "rule-declaration", key: id + name + value},
               DeclarationEditor({
@@ -40,6 +39,7 @@ const Rule = createClass({
                 declaration,
                 value: declaration.name,
                 isEditing: isEditingThis && isEditingName,
+                commitOn: ":",
                 commands: {
                   editNext,
                   editPrevious,
@@ -55,6 +55,7 @@ const Rule = createClass({
                 declaration,
                 value: declaration.value,
                 isEditing: isEditingThis && isEditingValue,
+                commitOn: ";",
                 commands: {
                   editNext,
                   editPrevious,

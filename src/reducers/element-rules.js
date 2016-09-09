@@ -1,6 +1,11 @@
 const {actions} = require('../constants');
-const {styleSheetFromRule, findNextDeclaration} = require('../accessors.js');
 const parseStyleSheet = require("../parser");
+const {
+  styleSheetFromRule,
+  findNextDeclaration,
+  getRuleDeclaration,
+  getRule
+} = require('../accessors.js');
 
 const set = (a, b) => Object.freeze(Object.assign({}, a, b));
 const flatten = (a, b) => ([...a, ...b]);
@@ -26,7 +31,7 @@ handlers[actions.ADD_STYLE_SHEET] = function (state, {styleSheet}) {
     styleSheets: [...styleSheets, {
       CSSStyleSheet: styleSheet,
       rules: parseStyleSheet(styleSheet.ownerNode.innerText),
-      matchedRules: [...matchedRules, ...matchRules(styleSheet.rules, element)]
+      // matchedRules: [...matchedRules, ...matchRules(styleSheet.rules, element)]
     }]
   });
 };
@@ -48,7 +53,7 @@ handlers[actions.EDIT_DECLARATION_NAME] = function (state, action) {
   const {rule, declaration} = action;
 
   return set(state, {
-    editing: { rule, declaration },
+    editing: { rule: rule.id, declaration: declaration.id },
     isEditingName: true,
     isEditingValue: false
   });
@@ -57,7 +62,7 @@ handlers[actions.EDIT_DECLARATION_NAME] = function (state, action) {
 handlers[actions.EDIT_DECLARATION_VALUE] = function (state, action) {
   const {rule, declaration} = action;
   return set(state, {
-    editing: { rule, declaration },
+    editing: { rule: rule.id, declaration: declaration.id },
     isEditingName: false,
     isEditingValue: true
   });
@@ -73,12 +78,14 @@ handlers[actions.STOP_EDITING_DECLARATION] = function (state, action) {
 
 handlers[actions.TAB_THROUGH_DECLARATIONS] = function(state, action) {
   const {direction} = action;
-  const {isEditingName, isEditingValue, matchedRules} = state;
-  const {rule, declaration} = state.editing;
+  const {isEditingName, isEditingValue, matchedRules: matchedRuleIDs} = state;
 
   // Assert that the state is correct for this type of action.
   console.assert(isEditingName !== isEditingValue, "Is editing either name or value.");
   console.assert(Boolean(state.editing), "Is editing something.");
+
+  const {rule, declaration} = getRuleDeclaration(state.styleSheets, state.editing);
+  const matchedRules = matchedRuleIDs.map(id => getRule(state.styleSheets, id));
 
   // The declaration won't change, so flip editing the name and value.
   if ((direction === 1 && isEditingName) || (direction === -1 && isEditingValue)) {
@@ -150,7 +157,7 @@ function matchCSSRule(matches, rule, element) {
   // Walk up the tree, and see if anything above it matches.
   do {
     if (element.matches(rule.selector)) {
-      matches.push(rule);
+      matches.push(rule.id);
       return matches
     }
     element = element.parentElement;

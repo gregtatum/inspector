@@ -19,6 +19,7 @@ const DeclarationEditor = createClass({
       beginEdit,
       isEditing,
       className,
+      commitOn,
       commands
     } = this.props;
 
@@ -26,6 +27,7 @@ const DeclarationEditor = createClass({
       return NavigatableInput({
         className: `rule-declaration-editor rule-declaration-editor-input ${className}`,
         defaultValue: value,
+        commitOn,
         commands
       });
     }

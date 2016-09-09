@@ -1,7 +1,8 @@
 const {DOM, createClass, createFactory} = require("react");
 const {input} = DOM;
 const Rule = createFactory(require('./rule'));
-const noop = () => {};
+// There is probably a better way to do this:
+const FONT_WIDTH_RATIO = 0.66;
 
 /**
  * Exit cases:
@@ -19,68 +20,90 @@ const NavigatableInput = createClass({
 
   componentDidMount() {
     this._input.focus();
+    this.setInputWidth();
+  },
+
+  setInputWidth() {
+    const {fontSize} = window.getComputedStyle(this._input);
+    const numberCharacters = this._input.value.length
+    const width = numberCharacters * parseInt(fontSize, 10) * FONT_WIDTH_RATIO;
+    this.setState({width});
   },
 
   getInitialState() {
-    return {
-      blurredByKeyDown: false
-    }
+    return { width: 0 }
   },
 
-  blurByKeyDown() {
-    this.setState({
-      blurredByKeyDown: true
-    })
-  },
-
-  handleKeyPress(event) {
+  handleKeyDown(event) {
     const {
-      discardChanges,
-      editNext,
-      editPrevious,
-      stopEditing
-    } = this.props.commands;
-
-    const commitChanges = this.valueChanged()
-      ? this.props.commands.commitChanges
-      : noop;
-
-    const value = this._input.value;
+      commitOn,
+      commands: {
+        discardChanges,
+        editNext,
+        editPrevious,
+        stopEditing,
+      }
+    } = this.props;
 
     switch (event.key) {
       case "Tab":
         event.preventDefault();
-        commitChanges(value);
+        this.commitAnyChanges();
         event.shiftKey ? editPrevious() : editNext();
         break;
       case "Enter":
-        commitChanges(value);
+        this.commitAnyChanges();
         editNext();
+        break;
+      case ":":
+      case ";":
+        // Don't allow these characters to get placed in the input.
+        event.preventDefault();
         break;
       case "Escape":
         stopEditing();
         break;
     }
+
+    if (commitOn === event.key) {
+      this.commitAnyChanges();
+      editNext();
+    }
   },
 
-  valueChanged() {
-    return this._input !== this.props.defaultValue;
+  commitAnyChanges() {
+    if (this._input.value !== this.props.defaultValue) {
+      this.props.commands.commitChanges(this._input.value);
+    }
+  },
+
+  handleKeyUp(event) {
+    const {
+      commitOn,
+      commands: {editNext}
+    } = this.props;
+
   },
 
   render() {
     const {
       className,
       defaultValue,
-      commands
+      commands: {
+        stopEditing
+      }
     } = this.props;
-    const {blurredByKeyDown} = this.state;
+    console.log(this.state.width)
 
     return input({
       className,
       defaultValue,
       ref: input => this._input = input,
-      onBlur: blurredByKeyDown ? null : commands.discardChanges,
-      onKeyDown: this.handleKeyPress
+      onBlur: stopEditing,
+      onKeyDown: this.handleKeyDown,
+      onKeyUp: this.handleKeyUp,
+      onChange: this.setInputWidth,
+      style: {width: this.state.width}
     });
   }
 });
