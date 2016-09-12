@@ -3,9 +3,11 @@ const {
   getSelectorOffset
 } = require('./parsing-utils')
 
-let ruleId = 0;
-let mediaQueryRuleId = 0;
-let declarationId = 0;
+const {
+  getMediaQueryRuleID,
+  getRuleID,
+  getDeclarationID,
+} = require("../utils/ids")
 
 /**
  * This file contains a list of objects that contain information that are relevant to
@@ -24,7 +26,7 @@ let declarationId = 0;
  * @property {array}   rules     - The rules that make up the media query.
  */
 function MediaQueryRule() {
-  this.id = "media-query-rule-" + mediaQueryRuleId++;
+  this.id = getMediaQueryRuleID();
   this.condition = null;
   this.rules = null;
 }
@@ -46,7 +48,7 @@ function MediaQueryRule() {
  */
 function Rule(token) {
   // A unique ID
-  this.id = "rule-" + ruleId++;
+  this.id = getRuleID();
 
   // The selector text prettified.
   this.selector = normalizeTokenText(token)
@@ -76,7 +78,7 @@ function Rule(token) {
  * @property {array}  offsets.value - [begin, end] of the entire value portion
  */
 function Declaration({text, startOffset, endOffset}) {
-  this.id = "declaration-" + declarationId++;
+  this.id = getDeclarationID();
   this.name = text;
   this.value = "";
   // this.priority = "";

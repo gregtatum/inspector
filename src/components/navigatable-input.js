@@ -1,6 +1,7 @@
 const {DOM, createClass, createFactory} = require("react");
 const {input} = DOM;
 const Rule = createFactory(require('./rule'));
+
 // There is probably a better way to do this:
 const FONT_WIDTH_RATIO = 0.66;
 
@@ -20,6 +21,7 @@ const NavigatableInput = createClass({
 
   componentDidMount() {
     this._input.focus();
+    this._input.select();
     this.setInputWidth();
   },
 
@@ -93,7 +95,6 @@ const NavigatableInput = createClass({
         stopEditing
       }
     } = this.props;
-    console.log(this.state.width)
 
     return input({
       className,

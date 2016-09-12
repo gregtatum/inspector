@@ -59,7 +59,8 @@ function parseRules(lexer) {
 function parseSingleRule(token, lexer) {
   const rule = new Rule(token);
   token = parseSelector(token, lexer, rule);
-  rule.declarations = parseDeclarations(token, lexer);
+  [rule.declarations, token] = parseDeclarations(token, lexer);
+  rule.offsets.text[1] = token.endOffset;
   return rule
 }
 
@@ -107,7 +108,7 @@ function parseDeclarations(token, lexer) {
     }
     token = skipWhitespace(lexer)
   }
-  return declarations;
+  return [declarations, token];
 }
 
 function parseSingleDeclaration(token, lexer) {

@@ -4,8 +4,12 @@ const {
   styleSheetFromRule,
   findNextDeclaration,
   getRuleDeclaration,
-  getRule
-} = require('../accessors.js');
+  getRule,
+  getDeclaration,
+  getStyleSheet,
+  getStyleSheetRuleDeclaration
+} = require('../utils/accessors.js');
+const {getStyleSheetID} = require("../utils/ids")
 
 const set = (a, b) => Object.freeze(Object.assign({}, a, b));
 const flatten = (a, b) => ([...a, ...b]);
@@ -23,15 +27,17 @@ const DEFAULT_STATE = {
   editing: null,
   isEditingName: false,
   isEditingValue: false,
+  updateQueue: Promise.resolve()
 }
 
-handlers[actions.ADD_STYLE_SHEET] = function (state, {styleSheet}) {
-  const {styleSheets, matchedRules, element} = state;
+handlers[actions.ADD_STYLE_SHEET] = function (state, {styleSheet, text}) {
+  const {styleSheets, element} = state;
   return set(state, {
     styleSheets: [...styleSheets, {
-      CSSStyleSheet: styleSheet,
-      rules: parseStyleSheet(styleSheet.ownerNode.innerText),
-      // matchedRules: [...matchedRules, ...matchRules(styleSheet.rules, element)]
+      id: getStyleSheetID(),
+      cssStyleSheet: styleSheet,
+      rules: parseStyleSheet(text),
+      text,
     }]
   });
 };
@@ -45,6 +51,8 @@ handlers[actions.SET_FOCUSED_ELEMENT] = function (state, action) {
       ...styleSheets
         .map(sheet => matchRules(sheet.rules, element))
         .reduce(flatten, [])
+        // Hack to make the stylesheet in the correct order
+        .reverse()
     ]
   })
 };
@@ -105,7 +113,7 @@ handlers[actions.TAB_THROUGH_DECLARATIONS] = function(state, action) {
     editing: next
   });
 };
-
+/*
 handlers[actions.UPDATE_DECLARATION] = function(state, action) {
   // const {styleSheet, rule, declaration, value} = action;
   const originalStyleSheet = styleSheetFromRule(state.styleSheets, action.rule);
@@ -119,9 +127,39 @@ handlers[actions.UPDATE_DECLARATION] = function(state, action) {
 
   return set(state, {styleSheets});
 }
+*/
+handlers[actions.UPDATE_DECLARATION] = function(state, action) {
+  const {declarationID, key, value} = action;
+  const {styleSheet, rule, declaration} = getStyleSheetRuleDeclaration(state.styleSheets,
+                                                                       declarationID);
 
-function updateInArray (array, value) {
-  const element = array.find(element => element.id === value.id);
+  // Update the rules.
+  const offset = declaration.offsets[key];
+  const text = replaceTextInOffset(styleSheet.text, value, offset);
+  const offsetRules = updateRuleOffsets(styleSheet.rules, offset, value);
+  const rules = updateDeclarationInRules(offsetRules, rule.id, declarationID, key, value);
+
+  // Update the stylesheet.
+  // TODO - Handle external stylesheets.
+  const cssStyleSheetIndex = [...document.styleSheets].indexOf(styleSheet.cssStyleSheet);
+  styleSheet.cssStyleSheet.ownerNode.innerHTML = text;
+  const cssStyleSheet = document.styleSheets[cssStyleSheetIndex];
+
+  // Set the new list of stylesheets.
+  const newStyleSheet = set(styleSheet, {text, rules, cssStyleSheet});
+  const newStyleSheets = updateInArray(state.styleSheets, newStyleSheet, styleSheet.id);
+  return set(state, {
+    styleSheets: newStyleSheets
+  });
+}
+
+handlers[actions.ADD_TO_UPDATE_QUEUE] = function(state, action) {
+  const {updateQueue} = action;
+  return set(state, {updateQueue});
+};
+
+function updateInArray(array, value, id = value.id) {
+  const element = array.find(element => element.id === id);
   if (!element) {
     throw new Error("Element was not found in the array.");
   }
@@ -164,6 +202,78 @@ function matchCSSRule(matches, rule, element) {
   } while (element)
 
   return matches;
+}
+
+function replaceTextInOffset(text, value, [offsetStart, offsetEnd]) {
+  return (
+    text.substring(0, offsetStart) +
+    value +
+    text.substring(offsetEnd, text.length - 1)
+  );
+}
+
+function updateRuleOffsets(rules, [start, end], value) {
+  const changeInLength = value.length - (end - start);
+  return rules.map(rule => {
+
+    const ruleOffsets = updateOffsets(rule.offsets, start, changeInLength);
+
+    if (ruleOffsets !== rule.offsets) {
+      // Update the declaration offsets if needed.
+      const declarations = rule.declarations.map(declaration => {
+        const offsets = updateOffsets(declaration.offsets, start, changeInLength);
+        if (offsets !== declaration.offsets) {
+          return set(declaration, {offsets});
+        }
+        return declaration;
+      });
+
+      return set(rule, {declarations, offsets: ruleOffsets});
+    }
+    return rule;
+  });
+}
+
+function updateOffsets (oldOffsets, start, changeInLength) {
+  let newOffsets;
+  for (var key in oldOffsets) {
+    if (oldOffsets.hasOwnProperty(key)) {
+      const oldOffset = oldOffsets[key];
+      const newOffset = updateOffset(oldOffset, start, changeInLength);
+      // Check to see if the offsets were updated.
+      if (oldOffset !== newOffset) {
+        if (!newOffsets) {
+          newOffsets = Object.assign({}, oldOffsets);
+        }
+        newOffsets[key] = newOffset;
+      }
+    }
+  }
+
+  // Only return new offsets if they were updated.
+  return newOffsets ? newOffsets : oldOffsets;
+}
+
+function updateOffset(offset, start, changeInLength) {
+  if (offset[0] > start || offset[1] > start) {
+    return [
+      offset[0] > start ? offset[0] + changeInLength : offset[0],
+      offset[1] > start ? offset[1] + changeInLength : offset[1]
+    ];
+  }
+  return offset;
+}
+
+function updateDeclarationInRules(rules, ruleID, declarationID, key, value) {
+  const oldRule = rules.find(rule => rule.id === ruleID);
+  const oldDeclaration = oldRule.declarations.find(declaration => declaration.id === declarationID);
+  const update = {};
+  update[key] = value;
+  const declaration = set(oldDeclaration, update);
+  const declarations = updateInArray(oldRule.declarations, declaration)
+  const rule = set(oldRule, {declarations})
+
+  return updateInArray(rules, rule);
 }
 
 module.exports = function (state = DEFAULT_STATE, action) {

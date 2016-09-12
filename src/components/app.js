@@ -1,6 +1,6 @@
 const {DOM, createClass, createFactory} = require("react");
 const {connect} = require("react-redux");
-const {getRule, getRuleDeclaration} = require("../accessors");
+const {getRule, getRuleDeclaration} = require("../utils/accessors");
 
 const RulesSidebar = createFactory(require("./rules-sidebar"))
 const Page = createFactory(require("./page"))
@@ -33,6 +33,7 @@ const Inspector = createClass({
         editing,
         isEditingName,
         isEditingValue,
+        updateQueue
       }
     } = this.props
 
@@ -48,8 +49,8 @@ const Inspector = createClass({
           isEditingValue: isEditingValue,
           editName: (rule, declaration) => dispatch(editDeclarationName(rule, declaration)),
           editValue: (rule, declaration) => dispatch(editDeclarationValue(rule, declaration)),
-          setName: (rule, declaration, name) => dispatch(setDeclarationName(rule, declaration, name)),
-          setValue: (rule, declaration, value) => dispatch(setDeclarationValue(rule, declaration, value)),
+          setName: (declaration, name) => dispatch(setDeclarationName(updateQueue, declaration, name)),
+          setValue: (declaration, value) => dispatch(setDeclarationValue(updateQueue, declaration, value)),
           stopEditing: () => dispatch(stopEditingDeclaration()),
           editNext: () => dispatch(tabThroughDeclarations(1)),
           editPrevious: () => dispatch(tabThroughDeclarations(-1)),

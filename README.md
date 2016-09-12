@@ -1,9 +1,9 @@
-# How to Build and Inspector
+# How to Build a CSS Inspector
 
-This is a personal experiment on how to build an inspector, and an experiment to see what an inspector's state data structure could look like. Currently there's no real UI, just a big dump in the console of what was parsed. The data structure is at the end, with tables in between.
+This is a personal experiment on how to build a CSS inspector, and a prototype of what an inspector's state data structure could look like.
 
-* Locally: From terminal run `npm start`.
-* Online: [CSS Object Model](articles/01-css-object-model.md)
+* Online: [CSS Inspector](https://gregtatum.github.io/inspector/)
+* Locally: From terminal run `npm install` and then `npm start`.
 
 ## Article
 

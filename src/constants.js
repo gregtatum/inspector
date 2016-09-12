@@ -6,6 +6,8 @@ const actions = {
   STOP_EDITING_DECLARATION: "stop-editing-declaration",
   TAB_THROUGH_DECLARATIONS: "tab-through-declarations",
   UPDATE_DECLARATION: "update-declaration",
+  ADD_TO_UPDATE_QUEUE: "add-to-update-queue",
+  UPDATE_STYLESHEET: "update-stylesheet"
 }
 
 module.exports = { actions }
