@@ -44,7 +44,7 @@ const Rule = createClass({
                   editNext,
                   editPrevious,
                   stopEditing,
-                  commitChanges: (name) => setName(rule, declaration, name),
+                  commitChanges: (name) => setName(declaration, name),
                   beginEdit: editName
                 }
               }),
@@ -60,7 +60,7 @@ const Rule = createClass({
                   editNext,
                   editPrevious,
                   stopEditing,
-                  commitChanges: (value) => setValue(rule, declaration, value),
+                  commitChanges: (value) => setValue(declaration, value),
                   beginEdit: editValue
                 }
               }),

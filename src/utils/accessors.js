@@ -57,6 +57,19 @@ function getRule(styleSheets, ruleID) {
   throw new Error(`Rule could not be found for "${ruleID}".`);
 }
 
+function getStyleSheet(styleSheets, styleSheetID) {
+  if (!styleSheetID) {
+    return null;
+  }
+
+  const styleSheet = styleSheets.find(styleSheet => styleSheet.id === styleSheetID);
+
+  if (!styleSheet) {
+    throw new Error(`StyleSheet could not be found for "${styleSheetID}".`);
+  }
+  return styleSheet;
+}
+
 function getRuleDeclaration(styleSheets, ruleDeclarationIDs) {
   if (!ruleDeclarationIDs) {
     return null;
@@ -75,9 +88,39 @@ function getRuleDeclaration(styleSheets, ruleDeclarationIDs) {
   return {rule, declaration};
 }
 
+function getStyleSheetRuleDeclaration(styleSheets, declarationID) {
+  for (let styleSheet of styleSheets) {
+    for (let rule of styleSheet.rules) {
+      for (let declaration of rule.declarations) {
+        if (declaration.id === declarationID) {
+          return {styleSheet, rule, declaration};
+        }
+      }
+    }
+  }
+  throw new Error(`The declaration "${declarationID}" could not be found.`);
+}
+
+function getDeclaration(styleSheets, declarationID) {
+  for (let styleSheet of styleSheets) {
+    for (let rule of styleSheet.rules) {
+      for (let declaration of rule.declarations) {
+        if (declaration.id === declarationID) {
+          return declaration;
+        }
+      }
+    }
+  }
+  throw new Error(`The declaration "${declarationID}" could not be found.`);
+}
+
+
 module.exports = {
   findNextDeclaration,
   getRule,
   getRuleDeclaration,
   styleSheetFromRule,
+  getStyleSheet,
+  getStyleSheetRuleDeclaration,
+  getDeclaration
 }

@@ -19,6 +19,7 @@ body {
 
 .rule {
   padding: 0.25em;
+  border-bottom: 1px dotted var(--theme-splitter-color);
 }
 
 .rule-selector {
@@ -75,6 +76,29 @@ body {
   font-family: var(--monospace-font-family);
 }
 
-.rule + .rule {
-    border: 1px dotted var(--theme-splitter-color);
+.commentary {
+  position:absolute;
+  bottom: 1em;
+  left: 1em;
+  max-width: 500px;
+}
+
+.rule-enter {
+  opacity: 0.01;
+  transform: translateY(2em);
+}
+
+.rule-enter.rule-enter-active {
+  opacity: 1;
+  transition: opacity 200ms ease-out, transform 200ms ease-out;
+  transform: translateY(0);
+}
+
+.rule-leave {
+  opacity: 1;
+}
+
+.rule-leave.rule-leave-active {
+  opacity: 0.01;
+  transition: opacity 300ms ease-in;
 }

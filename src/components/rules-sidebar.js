@@ -1,6 +1,6 @@
-const {DOM, createClass, createFactory} = require("react");
-const {div} = DOM;
-const Rule = createFactory(require('./rule'))
+const {DOM: {div}, createClass, createFactory} = require("react");
+const Rule = createFactory(require("./rule"));
+const OffsetTransitionGroup = createFactory(require("./offset-transition-group"));
 
 const RulesSidebar = createClass({
   displayName: "RulesSidebar",
@@ -11,10 +11,19 @@ const RulesSidebar = createClass({
       ruleProps
     } = this.props;
 
+    const transition = {
+      transitionName: "rule",
+      transitionAppearOffset: 100,
+      transitionEnterTimeout: 200,
+      transitionLeaveTimeout: 300,
+    };
+
     return div({ className: "rules-sidebar" },
-      ...rules.map((rule, i) => Rule(
-        Object.assign({}, {rule}, ruleProps)
-      ))
+      OffsetTransitionGroup(transition,
+        ...rules.map((rule, i) => Rule(
+          Object.assign({}, {rule, key: rule.id}, ruleProps)
+        ))
+      )
     )
   }
 });
