@@ -1,5 +1,4 @@
 const {actions} = require('../constants');
-const parseStyleSheet = require("../parser");
 const {
   styleSheetFromRule,
   findNextDeclaration,
@@ -9,6 +8,7 @@ const {
   getStyleSheet,
   getStyleSheetRuleDeclaration
 } = require('../utils/accessors.js');
+const {parseStyleSheet, parseOnlyDeclarations} = require("../parser");
 const {getStyleSheetID} = require("../utils/ids")
 
 const set = (a, b) => Object.freeze(Object.assign({}, a, b));
@@ -136,7 +136,7 @@ handlers[actions.UPDATE_DECLARATION] = function(state, action) {
   // Update the rules.
   const offset = declaration.offsets[key];
   const text = replaceTextInOffset(styleSheet.text, value, offset);
-  const offsetRules = updateRuleOffsets(styleSheet.rules, offset, value);
+  const offsetRules = updateRuleOffsets(styleSheet.rules, offset, value.length);
   const rules = updateDeclarationInRules(offsetRules, rule.id, declarationID, key, value);
 
   // Update the stylesheet.
@@ -158,6 +158,48 @@ handlers[actions.ADD_TO_UPDATE_QUEUE] = function(state, action) {
   return set(state, {updateQueue});
 };
 
+handlers[actions.PASTE_DECLARATIONS] = function(state, action) {
+  const {declaration, text} = action;
+
+  const {styleSheet} = getStyleSheetRuleDeclaration(state.styleSheets, declaration.id);
+
+  let newDeclarations;
+  try {
+    newDeclarations = parseOnlyDeclarations(text);
+  } catch (e) {
+    return state;
+  }
+
+  if (newDeclarations.length === 0) {
+    return state;
+  }
+
+  // Adjust the offsets to be at the same place as the targeted declaration.
+  // The offsets will be 1 off because a "{" was added to the lexing, so subtract
+  // by one when mutating them.
+  mutateDeclarationOffsets(newDeclarations, 0, declaration.offsets.text[0] - 1);
+
+  // Update the rule offsets, then splice in the new declarations.
+  const rules = updateRuleOffsets(styleSheet.rules, declaration.offsets.text, text.length)
+    .map(rule => {
+      const matchingDeclaration = rule.declarations.find(d => d.id === declaration.id);
+      if (matchingDeclaration) {
+        return set(rule, {
+          declarations: spliceInArray(rule.declarations, newDeclarations, declaration.id)
+        });
+      }
+      return rule
+    });
+
+  return set(state, {
+    styleSheets: updateInArray(state.styleSheets, set(styleSheet, {rules}))}
+  );
+};
+
+function replaceSingleDeclarationWithMultiple(rules, declarationID, declarations) {
+  return ;
+}
+
 function updateInArray(array, value, id = value.id) {
   const element = array.find(element => element.id === id);
   if (!element) {
@@ -165,6 +207,16 @@ function updateInArray(array, value, id = value.id) {
   }
   const newArray = [...array];
   newArray[array.indexOf(element)] = value;
+  return newArray;
+}
+
+function spliceInArray(array, items, id) {
+  const element = array.find(element => element.id === id);
+  if (!element) {
+    throw new Error("Element was not found in the array.");
+  }
+  const newArray = [...array];
+  newArray.splice(array.indexOf(element), 1, ...items);
   return newArray;
 }
 
@@ -212,8 +264,8 @@ function replaceTextInOffset(text, value, [offsetStart, offsetEnd]) {
   );
 }
 
-function updateRuleOffsets(rules, [start, end], value) {
-  const changeInLength = value.length - (end - start);
+function updateRuleOffsets(rules, [start, end], length) {
+  const changeInLength = length - (end - start);
   return rules.map(rule => {
 
     const ruleOffsets = updateOffsets(rule.offsets, start, changeInLength);
@@ -236,7 +288,7 @@ function updateRuleOffsets(rules, [start, end], value) {
 
 function updateOffsets (oldOffsets, start, changeInLength) {
   let newOffsets;
-  for (var key in oldOffsets) {
+  for (let key in oldOffsets) {
     if (oldOffsets.hasOwnProperty(key)) {
       const oldOffset = oldOffsets[key];
       const newOffset = updateOffset(oldOffset, start, changeInLength);
@@ -252,6 +304,22 @@ function updateOffsets (oldOffsets, start, changeInLength) {
 
   // Only return new offsets if they were updated.
   return newOffsets ? newOffsets : oldOffsets;
+}
+
+function mutateDeclarationOffsets (declarations, start, changeInLength) {
+  declarations.forEach(({offsets}) => {
+    for (let key in offsets) {
+      if (offsets.hasOwnProperty(key)) {
+        const offset = offsets[key];
+        if (offset[0] > start) {
+          offset[0] += changeInLength;
+        }
+        if (offset[1] > start) {
+          offset[1] += changeInLength;
+        }
+      }
+    }
+  });
 }
 
 function updateOffset(offset, start, changeInLength) {

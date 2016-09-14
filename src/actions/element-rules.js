@@ -28,6 +28,10 @@ function editDeclarationValue(rule, declaration) {
   return { type: actions.EDIT_DECLARATION_VALUE, rule, declaration };
 }
 
+function pasteDeclarations(declaration, text) {
+  return { type: actions.PASTE_DECLARATIONS, declaration, text };
+}
+
 // function setDeclarationName(rule, declaration, name) {
 //   return { type: actions.UPDATE_DECLARATION, rule, declaration, update: {name} };
 // }
@@ -81,4 +85,5 @@ module.exports = {
   tabThroughDeclarations,
   setDeclarationName,
   setDeclarationValue,
+  pasteDeclarations,
 }

@@ -24,7 +24,11 @@ function parseStyleSheet(styleSheetText) {
   return parseRules(lexer)
 }
 
-module.exports = parseStyleSheet;
+function parseOnlyDeclarations (declarationsText) {
+  const lexer = getCSSLexer("{" + declarationsText + "}");
+  const [declarations] = parseDeclarations(lexer.nextToken(), lexer);
+  return declarations;
+}
 
 function parseRules(lexer) {
   const rules = []
@@ -160,4 +164,16 @@ function parseMediaQueryCondition (token, lexer) {
     prevToken = token;
   }
   return condition
+}
+
+module.exports = {
+  parseStyleSheet,
+  parseRules,
+  parseSingleRule,
+  parseSelector,
+  parseDeclarations,
+  parseSingleDeclaration,
+  parseMediaQuery,
+  parseMediaQueryCondition,
+  parseOnlyDeclarations
 }

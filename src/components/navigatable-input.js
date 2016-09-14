@@ -79,18 +79,11 @@ const NavigatableInput = createClass({
     }
   },
 
-  handleKeyUp(event) {
-    const {
-      commitOn,
-      commands: {editNext}
-    } = this.props;
-
-  },
-
   render() {
     const {
       className,
       defaultValue,
+      valuesPasted,
       commands: {
         stopEditing
       }
@@ -102,9 +95,15 @@ const NavigatableInput = createClass({
       ref: input => this._input = input,
       onBlur: stopEditing,
       onKeyDown: this.handleKeyDown,
-      onKeyUp: this.handleKeyUp,
       onChange: this.setInputWidth,
-      style: {width: this.state.width}
+      style: {width: this.state.width},
+      onPaste: (e) => {
+        if([...e.clipboardData.types].includes('text/plain')){
+          valuesPasted(e.clipboardData.getData('text/plain'));
+          stopEditing();
+          e.preventDefault();
+        }
+      }
     });
   }
 });

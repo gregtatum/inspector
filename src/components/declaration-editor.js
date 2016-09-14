@@ -20,7 +20,8 @@ const DeclarationEditor = createClass({
       isEditing,
       className,
       commitOn,
-      commands
+      commands,
+      valuesPasted
     } = this.props;
 
     if (isEditing) {
@@ -28,14 +29,22 @@ const DeclarationEditor = createClass({
         className: `rule-declaration-editor rule-declaration-editor-input ${className}`,
         defaultValue: value,
         commitOn,
-        commands
+        commands,
+        valuesPasted
       });
     }
-    return button({
+    return span({
         className: `rule-declaration-editor rule-declaration-editor-button ${className}`,
-        onClick: () => commands.beginEdit(rule, declaration)
+        onClick: () => commands.beginEdit(rule, declaration),
+        role: "button",
+        tabIndex: 0,
+        onKeyPress: (e) => {
+          if (e.key === "Enter") {
+            commands.beginEdit(rule, declaration)
+          }
+        }
       },
-      span({}, value)
+      value
     );
   }
 });

@@ -22878,6 +22878,10 @@ function editDeclarationValue(rule, declaration) {
   return { type: actions.EDIT_DECLARATION_VALUE, rule, declaration };
 }
 
+function pasteDeclarations(declaration, text) {
+  return { type: actions.PASTE_DECLARATIONS, declaration, text };
+}
+
 // function setDeclarationName(rule, declaration, name) {
 //   return { type: actions.UPDATE_DECLARATION, rule, declaration, update: {name} };
 // }
@@ -22931,6 +22935,7 @@ module.exports = {
   tabThroughDeclarations,
   setDeclarationName,
   setDeclarationValue,
+  pasteDeclarations,
 }
 
 },{"../constants":209}],201:[function(require,module,exports){
@@ -22950,6 +22955,7 @@ const {
   tabThroughDeclarations,
   addPageStyleSheet,
   focusOnRedBox,
+  pasteDeclarations,
 } = require("../actions/element-rules");
 
 const Inspector = createClass({
@@ -22990,6 +22996,7 @@ const Inspector = createClass({
           stopEditing: () => dispatch(stopEditingDeclaration()),
           editNext: () => dispatch(tabThroughDeclarations(1)),
           editPrevious: () => dispatch(tabThroughDeclarations(-1)),
+          valuesPasted: (declaration, text) => dispatch(pasteDeclarations(declaration, text))
         }
       })
     )
@@ -23025,7 +23032,8 @@ const DeclarationEditor = createClass({
       isEditing,
       className,
       commitOn,
-      commands
+      commands,
+      valuesPasted
     } = this.props;
 
     if (isEditing) {
@@ -23033,14 +23041,22 @@ const DeclarationEditor = createClass({
         className: `rule-declaration-editor rule-declaration-editor-input ${className}`,
         defaultValue: value,
         commitOn,
-        commands
+        commands,
+        valuesPasted
       });
     }
-    return button({
+    return span({
         className: `rule-declaration-editor rule-declaration-editor-button ${className}`,
-        onClick: () => commands.beginEdit(rule, declaration)
+        onClick: () => commands.beginEdit(rule, declaration),
+        role: "button",
+        tabIndex: 0,
+        onKeyPress: (e) => {
+          if (e.key === "Enter") {
+            commands.beginEdit(rule, declaration)
+          }
+        }
       },
-      span({}, value)
+      value
     );
   }
 });
@@ -23129,18 +23145,11 @@ const NavigatableInput = createClass({
     }
   },
 
-  handleKeyUp(event) {
-    const {
-      commitOn,
-      commands: {editNext}
-    } = this.props;
-
-  },
-
   render() {
     const {
       className,
       defaultValue,
+      valuesPasted,
       commands: {
         stopEditing
       }
@@ -23152,9 +23161,15 @@ const NavigatableInput = createClass({
       ref: input => this._input = input,
       onBlur: stopEditing,
       onKeyDown: this.handleKeyDown,
-      onKeyUp: this.handleKeyUp,
       onChange: this.setInputWidth,
-      style: {width: this.state.width}
+      style: {width: this.state.width},
+      onPaste: (e) => {
+        if([...e.clipboardData.types].includes('text/plain')){
+          valuesPasted(e.clipboardData.getData('text/plain'));
+          stopEditing();
+          e.preventDefault();
+        }
+      }
     });
   }
 });
@@ -23294,7 +23309,7 @@ module.exports = Page;
 
 },{"react":188}],207:[function(require,module,exports){
 const {DOM, createClass, createFactory} = require("react");
-const {div, span, button, input} = DOM;
+const {div, span} = DOM;
 const DeclarationEditor = createFactory(require('./declaration-editor'));
 
 const Rule = createClass({
@@ -23313,6 +23328,7 @@ const Rule = createClass({
       stopEditing,
       editNext,
       editPrevious,
+      valuesPasted
     } = this.props;
 
     const {selector, declarations} = rule;
@@ -23320,7 +23336,7 @@ const Rule = createClass({
     return div({className: "rule theme-separator"},
       div({className: "rule-selector"},
         span({className: "rule-selector-text"}, selector),
-        span({className: "rule-selector-bracket"}, "{")
+        span({className: "rule-selector-bracket"}, " {")
       ),
       div({className: "rule-declarations"},
         declarations.map((declaration) => {
@@ -23328,6 +23344,7 @@ const Rule = createClass({
           const isEditingThis = editing && declaration === editing.declaration;
           return (
             div({className: "rule-declaration", key: id + name + value},
+              span({}, "  "),
               DeclarationEditor({
                 className: "rule-declaration-name",
                 rule,
@@ -23335,15 +23352,16 @@ const Rule = createClass({
                 value: declaration.name,
                 isEditing: isEditingThis && isEditingName,
                 commitOn: ":",
+                valuesPasted: (text) => valuesPasted(declaration, text),
                 commands: {
                   editNext,
                   editPrevious,
                   stopEditing,
                   commitChanges: (name) => setName(declaration, name),
-                  beginEdit: editName
+                  beginEdit: editName,
                 }
               }),
-              span({className: "rule-declaration-colon"}, ":"),
+              span({className: "rule-declaration-colon"}, ": "),
               DeclarationEditor({
                 className: "rule-declaration-value",
                 rule,
@@ -23351,12 +23369,15 @@ const Rule = createClass({
                 value: declaration.value,
                 isEditing: isEditingThis && isEditingValue,
                 commitOn: ";",
+                valuesPasted: (text) => {
+                  valuesPasted(declaration, `${declaration.name}: ${text}`)
+                },
                 commands: {
                   editNext,
                   editPrevious,
                   stopEditing,
                   commitChanges: (value) => setValue(declaration, value),
-                  beginEdit: editValue
+                  beginEdit: editValue,
                 }
               }),
               span({className: "rule-declaration-colon"}, ";")
@@ -23405,7 +23426,7 @@ const RulesSidebar = createClass({
 module.exports = RulesSidebar;
 
 },{"./offset-transition-group":204,"./rule":207,"react":188}],209:[function(require,module,exports){
-const actions = {
+const actions = Object.freeze({
   SET_FOCUSED_ELEMENT: "set-focused-element",
   ADD_STYLE_SHEET: "add-style-sheet",
   EDIT_DECLARATION_NAME: "edit-declaration-name",
@@ -23414,10 +23435,11 @@ const actions = {
   TAB_THROUGH_DECLARATIONS: "tab-through-declarations",
   UPDATE_DECLARATION: "update-declaration",
   ADD_TO_UPDATE_QUEUE: "add-to-update-queue",
-  UPDATE_STYLESHEET: "update-stylesheet"
-}
+  UPDATE_STYLESHEET: "update-stylesheet",
+  PASTE_DECLARATIONS: "paste-declarations"
+});
 
-module.exports = { actions }
+module.exports = { actions };
 
 },{}],210:[function(require,module,exports){
 const React = require('react')
@@ -24850,7 +24872,11 @@ function parseStyleSheet(styleSheetText) {
   return parseRules(lexer)
 }
 
-module.exports = parseStyleSheet;
+function parseOnlyDeclarations (declarationsText) {
+  const lexer = getCSSLexer("{" + declarationsText + "}");
+  const [declarations] = parseDeclarations(lexer.nextToken(), lexer);
+  return declarations;
+}
 
 function parseRules(lexer) {
   const rules = []
@@ -24988,6 +25014,18 @@ function parseMediaQueryCondition (token, lexer) {
   return condition
 }
 
+module.exports = {
+  parseStyleSheet,
+  parseRules,
+  parseSingleRule,
+  parseSelector,
+  parseDeclarations,
+  parseSingleDeclaration,
+  parseMediaQuery,
+  parseMediaQueryCondition,
+  parseOnlyDeclarations
+}
+
 },{"./css-lexer":211,"./css-structs":212,"./parsing-utils":214}],214:[function(require,module,exports){
 function skipWhitespace(lexer) {
   return findToken(lexer, token => token.tokenType !== "whitespace");
@@ -25045,7 +25083,6 @@ module.exports = {
 
 },{}],215:[function(require,module,exports){
 const {actions} = require('../constants');
-const parseStyleSheet = require("../parser");
 const {
   styleSheetFromRule,
   findNextDeclaration,
@@ -25055,6 +25092,7 @@ const {
   getStyleSheet,
   getStyleSheetRuleDeclaration
 } = require('../utils/accessors.js');
+const {parseStyleSheet, parseOnlyDeclarations} = require("../parser");
 const {getStyleSheetID} = require("../utils/ids")
 
 const set = (a, b) => Object.freeze(Object.assign({}, a, b));
@@ -25182,7 +25220,7 @@ handlers[actions.UPDATE_DECLARATION] = function(state, action) {
   // Update the rules.
   const offset = declaration.offsets[key];
   const text = replaceTextInOffset(styleSheet.text, value, offset);
-  const offsetRules = updateRuleOffsets(styleSheet.rules, offset, value);
+  const offsetRules = updateRuleOffsets(styleSheet.rules, offset, value.length);
   const rules = updateDeclarationInRules(offsetRules, rule.id, declarationID, key, value);
 
   // Update the stylesheet.
@@ -25204,6 +25242,48 @@ handlers[actions.ADD_TO_UPDATE_QUEUE] = function(state, action) {
   return set(state, {updateQueue});
 };
 
+handlers[actions.PASTE_DECLARATIONS] = function(state, action) {
+  const {declaration, text} = action;
+
+  const {styleSheet} = getStyleSheetRuleDeclaration(state.styleSheets, declaration.id);
+
+  let newDeclarations;
+  try {
+    newDeclarations = parseOnlyDeclarations(text);
+  } catch (e) {
+    return state;
+  }
+
+  if (newDeclarations.length === 0) {
+    return state;
+  }
+
+  // Adjust the offsets to be at the same place as the targeted declaration.
+  // The offsets will be 1 off because a "{" was added to the lexing, so subtract
+  // by one when mutating them.
+  mutateDeclarationOffsets(newDeclarations, 0, declaration.offsets.text[0] - 1);
+
+  // Update the rule offsets, then splice in the new declarations.
+  const rules = updateRuleOffsets(styleSheet.rules, declaration.offsets.text, text.length)
+    .map(rule => {
+      const matchingDeclaration = rule.declarations.find(d => d.id === declaration.id);
+      if (matchingDeclaration) {
+        return set(rule, {
+          declarations: spliceInArray(rule.declarations, newDeclarations, declaration.id)
+        });
+      }
+      return rule
+    });
+
+  return set(state, {
+    styleSheets: updateInArray(state.styleSheets, set(styleSheet, {rules}))}
+  );
+};
+
+function replaceSingleDeclarationWithMultiple(rules, declarationID, declarations) {
+  return ;
+}
+
 function updateInArray(array, value, id = value.id) {
   const element = array.find(element => element.id === id);
   if (!element) {
@@ -25211,6 +25291,16 @@ function updateInArray(array, value, id = value.id) {
   }
   const newArray = [...array];
   newArray[array.indexOf(element)] = value;
+  return newArray;
+}
+
+function spliceInArray(array, items, id) {
+  const element = array.find(element => element.id === id);
+  if (!element) {
+    throw new Error("Element was not found in the array.");
+  }
+  const newArray = [...array];
+  newArray.splice(array.indexOf(element), 1, ...items);
   return newArray;
 }
 
@@ -25258,8 +25348,8 @@ function replaceTextInOffset(text, value, [offsetStart, offsetEnd]) {
   );
 }
 
-function updateRuleOffsets(rules, [start, end], value) {
-  const changeInLength = value.length - (end - start);
+function updateRuleOffsets(rules, [start, end], length) {
+  const changeInLength = length - (end - start);
   return rules.map(rule => {
 
     const ruleOffsets = updateOffsets(rule.offsets, start, changeInLength);
@@ -25282,7 +25372,7 @@ function updateRuleOffsets(rules, [start, end], value) {
 
 function updateOffsets (oldOffsets, start, changeInLength) {
   let newOffsets;
-  for (var key in oldOffsets) {
+  for (let key in oldOffsets) {
     if (oldOffsets.hasOwnProperty(key)) {
       const oldOffset = oldOffsets[key];
       const newOffset = updateOffset(oldOffset, start, changeInLength);
@@ -25298,6 +25388,22 @@ function updateOffsets (oldOffsets, start, changeInLength) {
 
   // Only return new offsets if they were updated.
   return newOffsets ? newOffsets : oldOffsets;
+}
+
+function mutateDeclarationOffsets (declarations, start, changeInLength) {
+  declarations.forEach(({offsets}) => {
+    for (let key in offsets) {
+      if (offsets.hasOwnProperty(key)) {
+        const offset = offsets[key];
+        if (offset[0] > start) {
+          offset[0] += changeInLength;
+        }
+        if (offset[1] > start) {
+          offset[1] += changeInLength;
+        }
+      }
+    }
+  });
 }
 
 function updateOffset(offset, start, changeInLength) {

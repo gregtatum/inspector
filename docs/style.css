@@ -32,7 +32,6 @@ body {
 }
 
 .rule-selector-bracket {
-  padding: 0 0.5em;
 }
 
 .rule-declarations {
@@ -42,20 +41,20 @@ body {
 .rule-declaration-editor {
   background: none;
   border: none;
-  padding: 0em 0.5em;
+  padding: 0em;
   margin: 0;
   font-size: 1em;
   font-family: var(--monospace-font-family);
 }
+
 .rule-declaration-editor-button {
   cursor: pointer;
-}
-
-.rule-declaration-editor-button > span {
+  -moz-user-select: text;
+  user-select: text;
   border-bottom: 1px dotted transparent;
 }
 
-.rule-declaration-editor-button:hover > span {
+.rule-declaration-editor-button:hover {
   border-bottom: 1px dotted var(--theme-selection-background);
 }
 
@@ -63,13 +62,15 @@ body {
   color: var(--theme-highlight-red);
 }
 
-.rule-declaration-colon {
-  font-family: var(--monospace-font-family)
+.rule-declaration {
+  display: flex;
+  line-height: 1.35;
 }
 
-.rule-declaration {
-  /* localization :.( */
-  margin-left:1em;
+.rule-declaration > span {
+  white-space: pre;
+  font-family: var(--monospace-font-family);
+  border-bottom: 1px dotted transparent;
 }
 
 .rule-declaration-close {

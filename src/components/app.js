@@ -14,6 +14,7 @@ const {
   tabThroughDeclarations,
   addPageStyleSheet,
   focusOnRedBox,
+  pasteDeclarations,
 } = require("../actions/element-rules");
 
 const Inspector = createClass({
@@ -54,6 +55,7 @@ const Inspector = createClass({
           stopEditing: () => dispatch(stopEditingDeclaration()),
           editNext: () => dispatch(tabThroughDeclarations(1)),
           editPrevious: () => dispatch(tabThroughDeclarations(-1)),
+          valuesPasted: (declaration, text) => dispatch(pasteDeclarations(declaration, text))
         }
       })
     )

@@ -1,5 +1,5 @@
 const {DOM, createClass, createFactory} = require("react");
-const {div, span, button, input} = DOM;
+const {div, span} = DOM;
 const DeclarationEditor = createFactory(require('./declaration-editor'));
 
 const Rule = createClass({
@@ -18,6 +18,7 @@ const Rule = createClass({
       stopEditing,
       editNext,
       editPrevious,
+      valuesPasted
     } = this.props;
 
     const {selector, declarations} = rule;
@@ -25,7 +26,7 @@ const Rule = createClass({
     return div({className: "rule theme-separator"},
       div({className: "rule-selector"},
         span({className: "rule-selector-text"}, selector),
-        span({className: "rule-selector-bracket"}, "{")
+        span({className: "rule-selector-bracket"}, " {")
       ),
       div({className: "rule-declarations"},
         declarations.map((declaration) => {
@@ -33,6 +34,7 @@ const Rule = createClass({
           const isEditingThis = editing && declaration === editing.declaration;
           return (
             div({className: "rule-declaration", key: id + name + value},
+              span({}, "  "),
               DeclarationEditor({
                 className: "rule-declaration-name",
                 rule,
@@ -40,15 +42,16 @@ const Rule = createClass({
                 value: declaration.name,
                 isEditing: isEditingThis && isEditingName,
                 commitOn: ":",
+                valuesPasted: (text) => valuesPasted(declaration, text),
                 commands: {
                   editNext,
                   editPrevious,
                   stopEditing,
                   commitChanges: (name) => setName(declaration, name),
-                  beginEdit: editName
+                  beginEdit: editName,
                 }
               }),
-              span({className: "rule-declaration-colon"}, ":"),
+              span({className: "rule-declaration-colon"}, ": "),
               DeclarationEditor({
                 className: "rule-declaration-value",
                 rule,
@@ -56,12 +59,15 @@ const Rule = createClass({
                 value: declaration.value,
                 isEditing: isEditingThis && isEditingValue,
                 commitOn: ";",
+                valuesPasted: (text) => {
+                  valuesPasted(declaration, `${declaration.name}: ${text}`)
+                },
                 commands: {
                   editNext,
                   editPrevious,
                   stopEditing,
                   commitChanges: (value) => setValue(declaration, value),
-                  beginEdit: editValue
+                  beginEdit: editValue,
                 }
               }),
               span({className: "rule-declaration-colon"}, ";")
