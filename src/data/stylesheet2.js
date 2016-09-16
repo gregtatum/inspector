@@ -80,4 +80,4 @@ module.exports =
     font-size: 7em;
     margin-bottom: 0.3em;
 }
-`
+`;

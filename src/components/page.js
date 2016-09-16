@@ -5,7 +5,7 @@ const Page = createClass({
   displayName: "Page",
 
   componentDidMount() {
-    this.props.focusOnRedBox()
+    this.props.focusOnRedBox();
   },
 
   render() {
@@ -16,7 +16,7 @@ const Page = createClass({
       div({className: "blue-box"}),
       div({}),
       div({})
-    )
+    );
   }
 });
 

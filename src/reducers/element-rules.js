@@ -1,103 +1,106 @@
-const {actions} = require('../constants');
+const {actions} = require("../constants");
 const {
-  styleSheetFromRule,
   findNextDeclaration,
   getRuleDeclaration,
   getRule,
-  getDeclaration,
-  getStyleSheet,
-  getStyleSheetRuleDeclaration
-} = require('../utils/accessors.js');
+  getStyleSheetRuleDeclaration,
+  idMatcher
+} = require("../utils/accessors.js");
 const {parseStyleSheet, parseOnlyDeclarations} = require("../parser");
-const {getStyleSheetID} = require("../utils/ids")
-
-const set = (a, b) => Object.freeze(Object.assign({}, a, b));
-const flatten = (a, b) => ([...a, ...b]);
+const {getStyleSheetID} = require("../utils/ids");
+const {List, Map, fromJS} = require("immutable");
 
 const handlers = {};
 
-const DEFAULT_STATE = {
+const DEFAULT_STATE = Map({
   // DOMNode
   element: null,
   // [ Rule, ... ]
-  matchedRules: [],
+  matchedRules: List(),
   // [ StyleSheet, ... ]
-  styleSheets: [],
+  styleSheets: List(),
   // { style, rule, declaration }
   editing: null,
   isEditingName: false,
   isEditingValue: false,
   updateQueue: Promise.resolve()
-}
+});
 
-handlers[actions.ADD_STYLE_SHEET] = function (state, {styleSheet, text}) {
-  const {styleSheets, element} = state;
-  return set(state, {
-    styleSheets: [...styleSheets, {
-      id: getStyleSheetID(),
-      cssStyleSheet: styleSheet,
-      rules: parseStyleSheet(text),
+handlers[actions.ADD_STYLE_SHEET] = function(state, {cssStyleSheet, text}) {
+  const id = getStyleSheetID();
+  const rules = fromJS(parseStyleSheet(text));
+  return state.updateIn(
+    ["styleSheets"],
+    styleSheets => styleSheets.push(Map({
+      id,
+      cssStyleSheet,
+      rules,
       text,
-    }]
-  });
+    }))
+  );
 };
 
-handlers[actions.SET_FOCUSED_ELEMENT] = function (state, action) {
+handlers[actions.SET_FOCUSED_ELEMENT] = function(state, action) {
   const {element} = action;
-  const {styleSheets} = state;
-  return set(state, {
-    element,
-    matchedRules: [
-      ...styleSheets
-        .map(sheet => matchRules(sheet.rules, element))
-        .reduce(flatten, [])
-        // Hack to make the stylesheet in the correct order
-        .reverse()
-    ]
-  })
+  const matchedRules = List([
+    ...state.get("styleSheets")
+      .map(styleSheet => matchRules(styleSheet.get("rules"), element))
+      // Flatten the rules.
+      .reduce((a, b) => ([...a, ...b]), [])
+      // Hack to make the stylesheet in the correct order
+      .reverse()
+  ]);
+
+  return state.merge({element, matchedRules});
 };
 
-handlers[actions.EDIT_DECLARATION_NAME] = function (state, action) {
+handlers[actions.EDIT_DECLARATION_NAME] = function(state, action) {
   const {rule, declaration} = action;
 
-  return set(state, {
-    editing: { rule: rule.id, declaration: declaration.id },
+  return state.merge({
+    editing: Map({
+      rule: rule.get("id"),
+      declaration: declaration.get("id")
+    }),
     isEditingName: true,
     isEditingValue: false
   });
-}
+};
 
-handlers[actions.EDIT_DECLARATION_VALUE] = function (state, action) {
+handlers[actions.EDIT_DECLARATION_VALUE] = function(state, action) {
   const {rule, declaration} = action;
-  return set(state, {
-    editing: { rule: rule.id, declaration: declaration.id },
+  return state.merge({
+    editing: Map({rule: rule.get("id"), declaration: declaration.get("id")}),
     isEditingName: false,
     isEditingValue: true
   });
-}
+};
 
-handlers[actions.STOP_EDITING_DECLARATION] = function (state, action) {
-  return set(state, {
+handlers[actions.STOP_EDITING_DECLARATION] = function(state, action) {
+  return state.merge({
     editing: null,
     isEditingName: false,
     isEditingValue: false
   });
-}
+};
 
 handlers[actions.TAB_THROUGH_DECLARATIONS] = function(state, action) {
   const {direction} = action;
-  const {isEditingName, isEditingValue, matchedRules: matchedRuleIDs} = state;
+  const styleSheets = state.get("styleSheets");
+  const isEditingName = state.get("isEditingName");
+  const isEditingValue = state.get("isEditingValue");
+  const matchedRuleIDs = state.get("matchedRules");
 
   // Assert that the state is correct for this type of action.
   console.assert(isEditingName !== isEditingValue, "Is editing either name or value.");
-  console.assert(Boolean(state.editing), "Is editing something.");
+  console.assert(Boolean(state.get("editing")), "Is editing something.");
 
-  const {rule, declaration} = getRuleDeclaration(state.styleSheets, state.editing);
-  const matchedRules = matchedRuleIDs.map(id => getRule(state.styleSheets, id));
+  const {rule, declaration} = getRuleDeclaration(styleSheets, state.get("editing"));
+  const matchedRules = matchedRuleIDs.map(id => getRule(styleSheets, id));
 
   // The declaration won't change, so flip editing the name and value.
   if ((direction === 1 && isEditingName) || (direction === -1 && isEditingValue)) {
-    return set(state, {
+    return state.merge({
       isEditingName: !isEditingName,
       isEditingValue: !isEditingValue,
     });
@@ -107,63 +110,60 @@ handlers[actions.TAB_THROUGH_DECLARATIONS] = function(state, action) {
   const next = findNextDeclaration(direction, matchedRules, rule, declaration);
   const hasNext = Boolean(next);
 
-  return set(state, {
+  return state.merge({
     isEditingName: !isEditingName && hasNext,
     isEditingValue: !isEditingValue && hasNext,
     editing: next
   });
 };
-/*
-handlers[actions.UPDATE_DECLARATION] = function(state, action) {
-  // const {styleSheet, rule, declaration, value} = action;
-  const originalStyleSheet = styleSheetFromRule(state.styleSheets, action.rule);
 
-  const declaration = set(action.declaration, action.update);
-  const declarations = updateInArray(action.rule.declarations, declaration);
-  const rule = set(action.rule, {declarations});
-  const rules = updateInArray(originalStyleSheet.rules, rule);
-  const styleSheet = set(originalStyleSheet, {rules});
-  const styleSheets = updateInArray(state.styleSheets, styleSheet);
-
-  return set(state, {styleSheets});
-}
-*/
 handlers[actions.UPDATE_DECLARATION] = function(state, action) {
   const {declarationID, key, value} = action;
-  const {styleSheet, rule, declaration} = getStyleSheetRuleDeclaration(state.styleSheets,
+  const styleSheets = state.get("styleSheets");
+  const {styleSheet, rule, declaration} = getStyleSheetRuleDeclaration(styleSheets,
                                                                        declarationID);
 
   // Update the rules.
-  const offset = declaration.offsets[key];
-  const text = replaceTextInOffset(styleSheet.text, value, offset);
-  const offsetRules = updateRuleOffsets(styleSheet.rules, offset, value.length);
-  const rules = updateDeclarationInRules(offsetRules, rule.id, declarationID, key, value);
+  const offset = declaration.get("offsets").get(key);
+  const text = replaceTextInOffset(styleSheet.get("text"), value, offset);
+  const offsetRules = updateRuleOffsets(styleSheet.get("rules"), offset, value.length);
+  const rules = updateDeclarationInRules(offsetRules, rule.get("id"), declarationID, key,
+                                         value);
 
   // Update the stylesheet.
   // TODO - Handle external stylesheets.
-  const cssStyleSheetIndex = [...document.styleSheets].indexOf(styleSheet.cssStyleSheet);
-  styleSheet.cssStyleSheet.ownerNode.innerHTML = text;
-  const cssStyleSheet = document.styleSheets[cssStyleSheetIndex];
+  let cssStyleSheet = styleSheet.get("cssStyleSheet");
+  const cssStyleSheetIndex = [...document.styleSheets].indexOf(cssStyleSheet);
+  cssStyleSheet.ownerNode.innerHTML = text;
+  cssStyleSheet = document.styleSheets[cssStyleSheetIndex];
 
   // Set the new list of stylesheets.
-  const newStyleSheet = set(styleSheet, {text, rules, cssStyleSheet});
-  const newStyleSheets = updateInArray(state.styleSheets, newStyleSheet, styleSheet.id);
-  return set(state, {
-    styleSheets: newStyleSheets
-  });
-}
+  return state.mergeIn(
+    ["styleSheets", styleSheets.indexOf(styleSheet)],
+    {text, rules, cssStyleSheet}
+  );
+};
 
 handlers[actions.ADD_TO_UPDATE_QUEUE] = function(state, action) {
   const {updateQueue} = action;
-  return set(state, {updateQueue});
+  return state.merge({updateQueue});
 };
 
 handlers[actions.PASTE_DECLARATIONS] = function(state, action) {
+  // Select everything first to make the update steps easier to understand.
   const {declaration, text} = action;
-
-  const {styleSheet} = getStyleSheetRuleDeclaration(state.styleSheets, declaration.id);
+  const declarationID = declaration.get("id");
+  const textOffset = declaration.getIn(["offsets, text"]);
+  const styleSheets = state.get("styleSheets");
+  const {styleSheet, rule} = getStyleSheetRuleDeclaration(styleSheets, declarationID);
+  const styleSheetID = styleSheet.get("id");
+  const rules = styleSheet.get("rules");
+  const ruleIndex = rules.indexOf(rule);
+  const declarationIndex = rule.indexOf(declaration);
 
   let newDeclarations;
+  let newRules;
+
   try {
     newDeclarations = parseOnlyDeclarations(text);
   } catch (e) {
@@ -176,66 +176,39 @@ handlers[actions.PASTE_DECLARATIONS] = function(state, action) {
 
   // Adjust the offsets to be at the same place as the targeted declaration.
   // The offsets will be 1 off because a "{" was added to the lexing, so subtract
-  // by one when mutating them.
-  mutateDeclarationOffsets(newDeclarations, 0, declaration.offsets.text[0] - 1);
+  // by one when updating them.
+  newDeclarations = newDeclarations.map(newDeclaration => {
+    return updateOffsets(newDeclaration, 0, textOffset.get(0) - 1);
+  });
 
-  // Update the rule offsets, then splice in the new declarations.
-  const rules = updateRuleOffsets(styleSheet.rules, declaration.offsets.text, text.length)
-    .map(rule => {
-      const matchingDeclaration = rule.declarations.find(d => d.id === declaration.id);
-      if (matchingDeclaration) {
-        return set(rule, {
-          declarations: spliceInArray(rule.declarations, newDeclarations, declaration.id)
-        });
-      }
-      return rule
+  // Update the rule offsets.
+  newRules = updateRuleOffsets(rules, textOffset, text.length)
+    // Splice in the new declarations.
+    .updateIn([ruleIndex, declarationIndex], declarations => {
+      return declarations.splice(declarationIndex, 1, ...newDeclarations);
     });
 
-  return set(state, {
-    styleSheets: updateInArray(state.styleSheets, set(styleSheet, {rules}))}
+  return state.updateIn(
+    ["styleSheets", styleSheetID, "rules"],
+    newRules
   );
 };
-
-function replaceSingleDeclarationWithMultiple(rules, declarationID, declarations) {
-  return ;
-}
-
-function updateInArray(array, value, id = value.id) {
-  const element = array.find(element => element.id === id);
-  if (!element) {
-    throw new Error("Element was not found in the array.");
-  }
-  const newArray = [...array];
-  newArray[array.indexOf(element)] = value;
-  return newArray;
-}
-
-function spliceInArray(array, items, id) {
-  const element = array.find(element => element.id === id);
-  if (!element) {
-    throw new Error("Element was not found in the array.");
-  }
-  const newArray = [...array];
-  newArray.splice(array.indexOf(element), 1, ...items);
-  return newArray;
-}
 
 function matchRules(rules, element) {
   if (!element) {
     return [];
   }
-  return Array.prototype.reduce.call(rules, (matches, rule) => {
-    if(rule.condition) {
-      return matchMediaQuery(matches, rule);
-    } else {
-      return matchCSSRule(matches, rule, element);
+  return rules.reduce((matches, rule) => {
+    if (rule.condition) {
+      return matchMediaQuery(matches, rule, element);
     }
+    return matchCSSRule(matches, rule, element);
   }, []);
-};
+}
 
-function matchMediaQuery(matches, rule) {
-  if (window.matchMedia(rule.condition)) {
-    const childRules = matchRules(rule.rules, element)
+function matchMediaQuery(matches, rule, element) {
+  if (window.matchMedia(rule.get("condition"))) {
+    const childRules = matchRules(rule.get("rules"), element);
     if (childRules) {
       return matches.concat(childRules);
     }
@@ -246,105 +219,68 @@ function matchMediaQuery(matches, rule) {
 function matchCSSRule(matches, rule, element) {
   // Walk up the tree, and see if anything above it matches.
   do {
-    if (element.matches(rule.selector)) {
-      matches.push(rule.id);
-      return matches
+    if (element.matches(rule.get("selector"))) {
+      matches.push(rule.get("id"));
+      return matches;
     }
     element = element.parentElement;
-  } while (element)
+  } while (element);
 
   return matches;
 }
 
-function replaceTextInOffset(text, value, [offsetStart, offsetEnd]) {
+function replaceTextInOffset(text, value, offset) {
   return (
-    text.substring(0, offsetStart) +
+    text.substring(0, offset.get(0)) +
     value +
-    text.substring(offsetEnd, text.length - 1)
+    text.substring(offset.get(1), text.length - 1)
   );
 }
 
-function updateRuleOffsets(rules, [start, end], length) {
+function updateRuleOffsets(rules, originalOffset, length) {
+  const start = originalOffset.get(0);
+  const end = originalOffset.get(1);
   const changeInLength = length - (end - start);
-  return rules.map(rule => {
 
-    const ruleOffsets = updateOffsets(rule.offsets, start, changeInLength);
-
-    if (ruleOffsets !== rule.offsets) {
-      // Update the declaration offsets if needed.
-      const declarations = rule.declarations.map(declaration => {
-        const offsets = updateOffsets(declaration.offsets, start, changeInLength);
-        if (offsets !== declaration.offsets) {
-          return set(declaration, {offsets});
-        }
-        return declaration;
+  return rules.map(rule => rule.merge({
+    offsets: updateOffsets(rule, start, changeInLength),
+    declarations: rule.get("declarations").map(declaration => {
+      return declaration.merge({
+        offsets: updateOffsets(declaration, start, changeInLength)
       });
-
-      return set(rule, {declarations, offsets: ruleOffsets});
-    }
-    return rule;
-  });
+    }),
+  }));
 }
 
-function updateOffsets (oldOffsets, start, changeInLength) {
-  let newOffsets;
-  for (let key in oldOffsets) {
-    if (oldOffsets.hasOwnProperty(key)) {
-      const oldOffset = oldOffsets[key];
-      const newOffset = updateOffset(oldOffset, start, changeInLength);
-      // Check to see if the offsets were updated.
-      if (oldOffset !== newOffset) {
-        if (!newOffsets) {
-          newOffsets = Object.assign({}, oldOffsets);
-        }
-        newOffsets[key] = newOffset;
-      }
-    }
-  }
-
-  // Only return new offsets if they were updated.
-  return newOffsets ? newOffsets : oldOffsets;
-}
-
-function mutateDeclarationOffsets (declarations, start, changeInLength) {
-  declarations.forEach(({offsets}) => {
-    for (let key in offsets) {
-      if (offsets.hasOwnProperty(key)) {
-        const offset = offsets[key];
-        if (offset[0] > start) {
-          offset[0] += changeInLength;
-        }
-        if (offset[1] > start) {
-          offset[1] += changeInLength;
-        }
-      }
-    }
-  });
+function updateOffsets(object, start, changeInLength) {
+  return object.get("offsets").map(offset => updateOffset(offset, start, changeInLength));
 }
 
 function updateOffset(offset, start, changeInLength) {
-  if (offset[0] > start || offset[1] > start) {
-    return [
-      offset[0] > start ? offset[0] + changeInLength : offset[0],
-      offset[1] > start ? offset[1] + changeInLength : offset[1]
-    ];
+  const offset0 = offset.get(0);
+  const offset1 = offset.get(1);
+  if (offset0 > start || offset1 > start) {
+    return List([
+      offset0 > start ? offset0 + changeInLength : offset0,
+      offset1 > start ? offset1 + changeInLength : offset1
+    ]);
   }
   return offset;
 }
 
 function updateDeclarationInRules(rules, ruleID, declarationID, key, value) {
-  const oldRule = rules.find(rule => rule.id === ruleID);
-  const oldDeclaration = oldRule.declarations.find(declaration => declaration.id === declarationID);
-  const update = {};
-  update[key] = value;
-  const declaration = set(oldDeclaration, update);
-  const declarations = updateInArray(oldRule.declarations, declaration)
-  const rule = set(oldRule, {declarations})
+  const ruleIndex = rules.findIndex(idMatcher(ruleID));
+  const declarationIndex = rules
+    .get(ruleIndex)
+    .get("declarations")
+    .findIndex(idMatcher(declarationID));
 
-  return updateInArray(rules, rule);
+  const keyPath = [ruleIndex, "declarations", declarationIndex, key];
+
+  return rules.setIn(keyPath, value);
 }
 
-module.exports = function (state = DEFAULT_STATE, action) {
+module.exports = function(state = DEFAULT_STATE, action) {
   let handle = handlers[action.type];
   if (handle) {
     return handle(state, action);

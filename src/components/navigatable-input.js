@@ -1,6 +1,5 @@
-const {DOM, createClass, createFactory} = require("react");
+const {DOM, createClass} = require("react");
 const {input} = DOM;
-const Rule = createFactory(require('./rule'));
 
 // There is probably a better way to do this:
 const FONT_WIDTH_RATIO = 0.66;
@@ -27,20 +26,19 @@ const NavigatableInput = createClass({
 
   setInputWidth() {
     const {fontSize} = window.getComputedStyle(this._input);
-    const numberCharacters = this._input.value.length
+    const numberCharacters = this._input.value.length;
     const width = numberCharacters * parseInt(fontSize, 10) * FONT_WIDTH_RATIO;
     this.setState({width});
   },
 
   getInitialState() {
-    return { width: 0 }
+    return {width: 0};
   },
 
   handleKeyDown(event) {
     const {
       commitOn,
       commands: {
-        discardChanges,
         editNext,
         editPrevious,
         stopEditing,
@@ -92,14 +90,16 @@ const NavigatableInput = createClass({
     return input({
       className,
       defaultValue,
-      ref: input => this._input = input,
+      ref: element => {
+        this._input = element;
+      },
       onBlur: stopEditing,
       onKeyDown: this.handleKeyDown,
       onChange: this.setInputWidth,
       style: {width: this.state.width},
       onPaste: (e) => {
-        if([...e.clipboardData.types].includes('text/plain')){
-          valuesPasted(e.clipboardData.getData('text/plain'));
+        if ([...e.clipboardData.types].includes("text/plain")) {
+          valuesPasted(e.clipboardData.getData("text/plain"));
           stopEditing();
           e.preventDefault();
         }

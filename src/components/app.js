@@ -2,8 +2,8 @@ const {DOM, createClass, createFactory} = require("react");
 const {connect} = require("react-redux");
 const {getRule, getRuleDeclaration} = require("../utils/accessors");
 
-const RulesSidebar = createFactory(require("./rules-sidebar"))
-const Page = createFactory(require("./page"))
+const RulesSidebar = createFactory(require("./rules-sidebar"));
+const Page = createFactory(require("./page"));
 
 const {
   editDeclarationName,
@@ -28,16 +28,18 @@ const Inspector = createClass({
   render() {
     const {
       dispatch,
-      elementRules: {
-        matchedRules,
-        styleSheets,
-        editing,
-        isEditingName,
-        isEditingValue,
-        updateQueue
-      }
-    } = this.props
+      elementRules
+    } = this.props;
 
+    // Temporarily do this:
+    const matchedRules = elementRules.get("matchedRules");
+    const styleSheets = elementRules.get("styleSheets");
+    const editing = elementRules.get("editing");
+    const isEditingName = elementRules.get("isEditingName");
+    const isEditingValue = elementRules.get("isEditingValue");
+    const updateQueue = elementRules.get("updateQueue");
+
+    /* eslint-disable max-len */
     return DOM.div({},
       Page({
         focusOnRedBox: () => dispatch(focusOnRedBox())
@@ -58,12 +60,13 @@ const Inspector = createClass({
           valuesPasted: (declaration, text) => dispatch(pasteDeclarations(declaration, text))
         }
       })
-    )
+    );
+    /* eslint-enable max-len */
   }
 });
 
 function mapStateToProps(state) {
-  return state
+  return state;
 }
 
-module.exports = connect(mapStateToProps)(Inspector)
+module.exports = connect(mapStateToProps)(Inspector);

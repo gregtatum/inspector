@@ -18,13 +18,13 @@ const RulesSidebar = createClass({
       transitionLeaveTimeout: 300,
     };
 
-    return div({ className: "rules-sidebar" },
+    return div({className: "rules-sidebar"},
       OffsetTransitionGroup(transition,
         ...rules.map((rule, i) => Rule(
-          Object.assign({}, {rule, key: rule.id}, ruleProps)
+          Object.assign({rule, key: rule.id}, ruleProps)
         ))
       )
-    )
+    );
   }
 });
 

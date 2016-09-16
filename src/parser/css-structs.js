@@ -1,13 +1,13 @@
 const {
   normalizeTokenText,
   getSelectorOffset
-} = require('./parsing-utils')
+} = require("./parsing-utils");
 
 const {
   getMediaQueryRuleID,
   getRuleID,
   getDeclarationID,
-} = require("../utils/ids")
+} = require("../utils/ids");
 
 /**
  * This file contains a list of objects that contain information that are relevant to
@@ -25,10 +25,12 @@ const {
  *                                   e.g. "@media screen and (min-width: 1200px)"
  * @property {array}   rules     - The rules that make up the media query.
  */
-function MediaQueryRule() {
-  this.id = getMediaQueryRuleID();
-  this.condition = null;
-  this.rules = null;
+function createMediaQueryRule() {
+  return {
+    id: getMediaQueryRuleID(),
+    condition: null,
+    rules: null,
+  };
 }
 
 /**
@@ -46,19 +48,21 @@ function MediaQueryRule() {
  * @property {array}  declarations     - The name/value style Declarations objects that
  *                                         make up the rule.
  */
-function Rule(token) {
-  // A unique ID
-  this.id = getRuleID();
+function createRule(token) {
+  return {
+    // A unique ID
+    id: getRuleID(),
 
-  // The selector text prettified.
-  this.selector = normalizeTokenText(token)
-  // Start and end text offsets in the stylesheet text.
-  this.offsets = {
-    selector: getSelectorOffset(token),
-    text: getSelectorOffset(token),
+    // The selector text prettified.
+    selector: normalizeTokenText(token),
+    // Start and end text offsets in the stylesheet text.
+    offsets: {
+      selector: getSelectorOffset(token),
+      text: getSelectorOffset(token),
+    },
+    // Array of declaration objects.
+    declarations: null,
   };
-  // Array of declaration objects.
-  this.declarations = null;
 }
 
 /**
@@ -77,23 +81,25 @@ function Rule(token) {
  * @property {array}  offsets.name  - [begin, end] of the entire name portion
  * @property {array}  offsets.value - [begin, end] of the entire value portion
  */
-function Declaration({text, startOffset, endOffset}) {
-  this.id = getDeclarationID();
-  this.name = text;
-  this.value = "";
-  // this.priority = "";
-  // this.terminator = "";
-  // this.enabled = true;
-  this.offsets = {
-    // comment: null,
-    text: [startOffset, endOffset],
-    name: [startOffset, endOffset],
-    value: [0, 0]
+function createDeclaration({text, startOffset, endOffset}) {
+  return {
+    id: getDeclarationID(),
+    name: text,
+    value: "",
+    // priority: "",
+    // terminator: "",
+    // enabled: true,
+    offsets: {
+      // comment: null,
+      text: [startOffset, endOffset],
+      name: [startOffset, endOffset],
+      value: [0, 0]
+    }
   };
 }
 
 module.exports = {
-  MediaQueryRule,
-  Rule,
-  Declaration
-}
+  createMediaQueryRule,
+  createRule,
+  createDeclaration
+};

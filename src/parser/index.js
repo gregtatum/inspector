@@ -1,19 +1,20 @@
-const {getCSSLexer} = require('./css-lexer')
+/* Assignment in a while condition makes token parsing easier. */
+/* eslint-disable no-cond-assign */
+
+const {getCSSLexer} = require("./css-lexer");
 
 const {
   skipWhitespace,
   findSemicolon,
-  findToken,
   getText,
   normalizeTokenText,
-  getSelectorOffset
-} = require('./parsing-utils');
+} = require("./parsing-utils");
 
 const {
-  MediaQueryRule,
-  Rule,
-  Declaration
-} = require('./css-structs');
+  createMediaQueryRule,
+  createRule,
+  createDeclaration
+} = require("./css-structs");
 
 /**
  * This file collects all of the functions that parse a stylesheet's text into a
@@ -21,17 +22,18 @@ const {
  */
 function parseStyleSheet(styleSheetText) {
   const lexer = getCSSLexer(styleSheetText);
-  return parseRules(lexer)
+  return parseRules(lexer);
 }
 
-function parseOnlyDeclarations (declarationsText) {
+function parseOnlyDeclarations(declarationsText) {
   const lexer = getCSSLexer("{" + declarationsText + "}");
   const [declarations] = parseDeclarations(lexer.nextToken(), lexer);
   return declarations;
 }
 
 function parseRules(lexer) {
-  const rules = []
+  const rules = [];
+  let token;
 
   while (token = skipWhitespace(lexer)) {
     // This is a media query
@@ -40,7 +42,7 @@ function parseRules(lexer) {
         rules.push(parseMediaQuery(token, lexer));
       } else {
         // Skip until the next semi-colon for cases like `@charset "UTF-8";`
-        findSemicolon(lexer)
+        findSemicolon(lexer);
       }
       continue;
     }
@@ -61,17 +63,17 @@ function parseRules(lexer) {
 }
 
 function parseSingleRule(token, lexer) {
-  const rule = new Rule(token);
+  const rule = createRule(token);
   token = parseSelector(token, lexer, rule);
   [rule.declarations, token] = parseDeclarations(token, lexer);
   rule.offsets.text[1] = token.endOffset;
-  return rule
+  return rule;
 }
 
 function parseSelector(token, lexer, rule) {
   let prevToken = token;
 
-  while(token = skipWhitespace(lexer)) {
+  while (token = skipWhitespace(lexer)) {
     const {tokenType, text, endOffset} = token;
 
     if (tokenType === "symbol") {
@@ -82,7 +84,7 @@ function parseSelector(token, lexer, rule) {
     if (tokenType === "ident" || tokenType === "id" || tokenType === "symbol") {
       const spacer = (
           token.text === "," ||
-          token.text === ":"  ||
+          token.text === ":" ||
           prevToken.text === ":" ||
           prevToken.text === "."
         ) ? "" : " ";
@@ -92,7 +94,7 @@ function parseSelector(token, lexer, rule) {
     prevToken = token;
   }
   // Return the opening bracket token.
-  return token
+  return token;
 }
 
 function parseDeclarations(token, lexer) {
@@ -101,27 +103,27 @@ function parseDeclarations(token, lexer) {
   if (!token || token.text !== "{") {
     return token;
   }
-  token = skipWhitespace(lexer)
+  token = skipWhitespace(lexer);
   while (token.text !== "}" && token.tokenType !== "symbol") {
     if (token.tokenType === "ident") {
-      declarations.push(parseSingleDeclaration(token, lexer))
+      declarations.push(parseSingleDeclaration(token, lexer));
     } else if (token.tokenType === "comment") {
       // TODO
     } else {
       throw new Error("Unable to parse declarations");
     }
-    token = skipWhitespace(lexer)
+    token = skipWhitespace(lexer);
   }
   return [declarations, token];
 }
 
 function parseSingleDeclaration(token, lexer) {
-  const declaration = new Declaration(token);
-  const colon = skipWhitespace(lexer)
+  const declaration = createDeclaration(token);
+  const colon = skipWhitespace(lexer);
   if (colon.tokenType !== "symbol" || colon.text !== ":") {
     throw new Error("Unable to parse a declaration");
   }
-  const valueStart = skipWhitespace(lexer)
+  const valueStart = skipWhitespace(lexer);
   const valueEnd = findSemicolon(lexer);
   if (!valueStart || !valueEnd) {
     throw new Error("Unable to parse declaration");
@@ -130,22 +132,22 @@ function parseSingleDeclaration(token, lexer) {
   const valueOffset = declaration.offsets.value;
   valueOffset[0] = valueStart.startOffset;
   valueOffset[1] = valueEnd.startOffset;
-  declaration.value = getText(lexer, valueOffset)
-  return declaration
+  declaration.value = getText(lexer, valueOffset);
+  return declaration;
 }
 
-function parseMediaQuery (token, lexer) {
-  const mediaQueryRule = new MediaQueryRule();
+function parseMediaQuery(token, lexer) {
+  const mediaQueryRule = createMediaQueryRule();
   mediaQueryRule.condition = parseMediaQueryCondition(token, lexer);
   mediaQueryRule.rules = parseRules(lexer);
   return mediaQueryRule;
 }
 
-function parseMediaQueryCondition (token, lexer) {
+function parseMediaQueryCondition(token, lexer) {
   let condition = "@media";
   let prevToken = token;
-  while(token = skipWhitespace(lexer)) {
-    const {tokenType, text, endOffset} = token;
+  while (token = skipWhitespace(lexer)) {
+    const {tokenType, text} = token;
 
     if (tokenType === "symbol") {
       if (text === "{") {
@@ -163,7 +165,7 @@ function parseMediaQueryCondition (token, lexer) {
     }
     prevToken = token;
   }
-  return condition
+  return condition;
 }
 
 module.exports = {
@@ -176,4 +178,4 @@ module.exports = {
   parseMediaQuery,
   parseMediaQueryCondition,
   parseOnlyDeclarations
-}
+};

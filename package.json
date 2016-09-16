@@ -4,11 +4,19 @@
   "main": "src/index.js",
   "scripts": {
     "start": "budo --dir docs --serve bundle.js src/index.js",
-    "build": "browserify src/index.js > docs/bundle.js"
+    "build": "browserify src/index.js > docs/bundle.js",
+    "lint": "eslint src",
+    "test": "npm run lint"
   },
   "devDependencies": {
+    "babel-eslint": "6.1.2",
     "browserify": "13.1.0",
     "budo": "9.0.0",
+    "eslint": "3.5.0",
+    "eslint-plugin-babel": "3.3.0",
+    "eslint-plugin-mozilla": "0.0.3",
+    "eslint-plugin-react": "6.2.2",
+    "immutable": "3.8.1",
     "react": "15.3.1",
     "react-addons-css-transition-group": "15.3.1",
     "react-addons-transition-group": "15.3.1",

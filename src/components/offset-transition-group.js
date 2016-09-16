@@ -4,13 +4,13 @@ const {
   Children: {map}
 } = require("react");
 const TransitionGroup = createFactory(require("react-addons-transition-group"));
-const OffsetTransitionItem  = createFactory(require("./offset-transition-item"));
+const OffsetTransitionItem = createFactory(require("./offset-transition-item"));
 
 const OffsetTransitionGroup = createClass({
   displayName: "OffsetTransitionGroup",
 
   getInitialState() {
-    return { animations: { promise: Promise.resolve() } }
+    return {animations: {promise: Promise.resolve()}};
   },
 
   render() {
@@ -29,4 +29,4 @@ const OffsetTransitionGroup = createClass({
   }
 });
 
-module.exports = OffsetTransitionGroup
+module.exports = OffsetTransitionGroup;

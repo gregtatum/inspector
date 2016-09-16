@@ -1,6 +1,6 @@
 const {DOM, createClass, createFactory} = require("react");
-const {input, button, span} = DOM;
-const NavigatableInput = createFactory(require('./navigatable-input'));
+const {span} = DOM;
+const NavigatableInput = createFactory(require("./navigatable-input"));
 
 const DeclarationEditor = createClass({
   displayName: "DeclarationEditor",
@@ -8,7 +8,7 @@ const DeclarationEditor = createClass({
   getInitialState() {
     return {
       wasEditing: false
-    }
+    };
   },
 
   render() {
@@ -16,7 +16,6 @@ const DeclarationEditor = createClass({
       rule,
       declaration,
       value,
-      beginEdit,
       isEditing,
       className,
       commitOn,
@@ -34,16 +33,16 @@ const DeclarationEditor = createClass({
       });
     }
     return span({
-        className: `rule-declaration-editor rule-declaration-editor-button ${className}`,
-        onClick: () => commands.beginEdit(rule, declaration),
-        role: "button",
-        tabIndex: 0,
-        onKeyPress: (e) => {
-          if (e.key === "Enter") {
-            commands.beginEdit(rule, declaration)
-          }
+      className: `rule-declaration-editor rule-declaration-editor-button ${className}`,
+      onClick: () => commands.beginEdit(rule, declaration),
+      role: "button",
+      tabIndex: 0,
+      onKeyPress: (e) => {
+        if (e.key === "Enter") {
+          commands.beginEdit(rule, declaration);
         }
-      },
+      }
+    },
       value
     );
   }

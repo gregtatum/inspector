@@ -1,13 +1,16 @@
+/* Assignment in a while condition makes token parsing easier. */
+/* eslint-disable no-cond-assign */
 function skipWhitespace(lexer) {
   return findToken(lexer, token => token.tokenType !== "whitespace");
 }
 
 function findSemicolon(lexer) {
-  return findToken(lexer, token => token.tokenType === "symbol" && token.text === ";")
+  return findToken(lexer, token => token.tokenType === "symbol" && token.text === ";");
 }
 
 function findToken(lexer, condition) {
-  while(token = lexer.nextToken()) {
+  let token;
+  while (token = lexer.nextToken()) {
     if (condition(token)) {
       return token;
     }
@@ -16,14 +19,13 @@ function findToken(lexer, condition) {
 }
 
 function getText(lexer, offset) {
-  return lexer.mBuffer.substring(...offset)
+  return lexer.mBuffer.substring(...offset);
 }
 
 function normalizeTokenText(token) {
   switch (token.tokenType) {
     case "id":
       return "#" + token.text;
-      break;
     case "dimension":
       return token.number + token.text;
     case "number":
@@ -38,9 +40,8 @@ function getSelectorOffset(token) {
   switch (token.tokenType) {
     case "id":
       return "#" + token.text;
-      break;
   }
-  return [offsetTweak + token.startOffset, token.endOffset]
+  return [offsetTweak + token.startOffset, token.endOffset];
 }
 
 module.exports = {
@@ -50,4 +51,4 @@ module.exports = {
   getText,
   normalizeTokenText,
   getSelectorOffset
-}
+};

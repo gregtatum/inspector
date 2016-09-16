@@ -1,6 +1,6 @@
 function styleSheetFromRule(styleSheets, rule) {
   return styleSheets.find(styleSheet => {
-    return styleSheet.rules.find(ruleB => ruleB.id === rule.id);
+    return styleSheet.get("rules").find(idMatcher(rule.get("id")));
   });
 }
 
@@ -8,14 +8,14 @@ function findNextDeclaration(direction, rules, rule, declaration) {
   // The declaration can be undefined if the last searched rule did not have
   // any declarations.
   if (declaration) {
-    const nextDeclarationIndex = direction + rule.declarations.indexOf(declaration);
+    const nextDeclarationIndex = direction + rule.get("declarations").indexOf(declaration);
 
-    if (nextDeclarationIndex >= 0 && nextDeclarationIndex < rule.declarations.length) {
+    if (nextDeclarationIndex >= 0 && nextDeclarationIndex < rule.get("declarations").size) {
       // This rule had more declarations.
       return {
-        rule: rule.id,
-        declaration: rule.declarations[nextDeclarationIndex].id
-      }
+        rule: rule.get("id"),
+        declaration: rule.getIn(["declarations", nextDeclarationIndex, "id"])
+      };
     }
   }
 
@@ -23,17 +23,18 @@ function findNextDeclaration(direction, rules, rule, declaration) {
   // rule and continue searching there.
   const nextRuleIndex = direction + rules.indexOf(rule);
 
-  if (nextRuleIndex >= 0 && nextRuleIndex < rules.length) {
-    const nextRule = rules[nextRuleIndex];
+  if (nextRuleIndex >= 0 && nextRuleIndex < rules.size) {
+    const nextRule = rules.get(nextRuleIndex);
+    const nextDeclarations = nextRule.get("declarations");
     const nextDeclaration = direction === 1
-      ? nextRule.declarations[0]
-      : nextRule.declarations[nextRule.declarations.length - 1];
+      ? nextDeclarations.get(0)
+      : nextDeclarations.get(nextDeclarations.size - 1);
 
     if (nextDeclaration) {
       return {
-        rule: nextRule.id,
-        declaration: nextDeclaration.id
-      }
+        rule: nextRule.get("id"),
+        declaration: nextDeclaration.get("id")
+      };
     }
     // No declarations were found on this rule, start searching the next rule recursively.
     return findNextDeclaration(direction, rules, nextRule);
@@ -49,7 +50,7 @@ function getRule(styleSheets, ruleID) {
   }
 
   for (let styleSheet of styleSheets) {
-    const rule = styleSheet.rules.find(rule => rule.id === ruleID)
+    const rule = styleSheet.get("rules").find(idMatcher(ruleID));
     if (rule) {
       return rule;
     }
@@ -57,30 +58,15 @@ function getRule(styleSheets, ruleID) {
   throw new Error(`Rule could not be found for "${ruleID}".`);
 }
 
-function getStyleSheet(styleSheets, styleSheetID) {
-  if (!styleSheetID) {
-    return null;
-  }
-
-  const styleSheet = styleSheets.find(styleSheet => styleSheet.id === styleSheetID);
-
-  if (!styleSheet) {
-    throw new Error(`StyleSheet could not be found for "${styleSheetID}".`);
-  }
-  return styleSheet;
-}
-
 function getRuleDeclaration(styleSheets, ruleDeclarationIDs) {
   if (!ruleDeclarationIDs) {
     return null;
   }
-  const {
-    rule: ruleID,
-    declaration: declarationID
-  } = ruleDeclarationIDs;
+  const ruleID = ruleDeclarationIDs.get("rule");
+  const declarationID = ruleDeclarationIDs.get("declaration");
 
   const rule = getRule(styleSheets, ruleID);
-  const declaration = rule.declarations.find(declaration => declaration.id === declarationID);
+  const declaration = rule.get("declarations").find(idMatcher(declarationID));
 
   if (!declaration) {
     throw new Error(`Declaration could not be found for "${declarationID}".`);
@@ -90,9 +76,9 @@ function getRuleDeclaration(styleSheets, ruleDeclarationIDs) {
 
 function getStyleSheetRuleDeclaration(styleSheets, declarationID) {
   for (let styleSheet of styleSheets) {
-    for (let rule of styleSheet.rules) {
-      for (let declaration of rule.declarations) {
-        if (declaration.id === declarationID) {
+    for (let rule of styleSheet.get("rules")) {
+      for (let declaration of rule.get("declarations")) {
+        if (declaration.get("id") === declarationID) {
           return {styleSheet, rule, declaration};
         }
       }
@@ -103,9 +89,9 @@ function getStyleSheetRuleDeclaration(styleSheets, declarationID) {
 
 function getDeclaration(styleSheets, declarationID) {
   for (let styleSheet of styleSheets) {
-    for (let rule of styleSheet.rules) {
-      for (let declaration of rule.declarations) {
-        if (declaration.id === declarationID) {
+    for (let rule of styleSheet.get("rules")) {
+      for (let declaration of rule.get("declarations")) {
+        if (declaration.get("id") === declarationID) {
           return declaration;
         }
       }
@@ -114,13 +100,16 @@ function getDeclaration(styleSheets, declarationID) {
   throw new Error(`The declaration "${declarationID}" could not be found.`);
 }
 
+function idMatcher(id) {
+  return item => item.get("id") === id;
+}
 
 module.exports = {
   findNextDeclaration,
   getRule,
   getRuleDeclaration,
   styleSheetFromRule,
-  getStyleSheet,
   getStyleSheetRuleDeclaration,
-  getDeclaration
-}
+  getDeclaration,
+  idMatcher
+};

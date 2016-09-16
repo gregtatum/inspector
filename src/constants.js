@@ -11,4 +11,4 @@ const actions = Object.freeze({
   PASTE_DECLARATIONS: "paste-declarations"
 });
 
-module.exports = { actions };
+module.exports = {actions};

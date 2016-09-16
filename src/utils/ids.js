@@ -10,4 +10,4 @@ module.exports = {
   getDeclarationID: () => "declaration-" + declarationID++,
   getStyleSheetID: () => "stylesheet-" + styleSheetID++,
   getRevisionID: () => "revision-" + revisionID++,
-}
+};

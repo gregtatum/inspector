@@ -4,14 +4,14 @@ const {
 } = require("react");
 
 function resolveIn(milliseconds) {
-  return new Promise(resolve => setTimeout(resolve, milliseconds))
+  return new Promise(resolve => setTimeout(resolve, milliseconds));
 }
 
 function defer(fn) {
   setTimeout(fn, 1);
 }
 
-function transitionIn (callback) {
+function transitionIn(callback) {
   defer(() => {
     const {
       animations: {promise},
@@ -21,9 +21,8 @@ function transitionIn (callback) {
     } = this.props;
 
     this.props.animations.promise = promise.then(() => {
-
       this.setClassName(`${transitionName}-enter ${transitionName}-enter-active`);
-      setTimeout(callback, transitionEnterTimeout)
+      setTimeout(callback, transitionEnterTimeout);
       return resolveIn(transitionAppearOffset);
     });
   });
@@ -37,7 +36,7 @@ const OffsetTransitionItem = createClass({
   },
 
   setClassName(className) {
-    this.setState({className})
+    this.setState({className});
   },
 
   componentWillAppear: transitionIn,
@@ -54,14 +53,20 @@ const OffsetTransitionItem = createClass({
 
     defer(() => {
       this.setClassName(`${transitionName}-leave ${transitionName}-leave-active`);
-      setTimeout(callback, transitionLeaveTimeout)
+      setTimeout(callback, transitionLeaveTimeout);
     });
   },
 
   render() {
     const {className} = this.state;
 
-    return div({ ref: el => this._div = el, className},
+    return div(
+      {
+        className,
+        ref: element => {
+          this._div = element;
+        }
+      },
       this.props.children
     );
   }

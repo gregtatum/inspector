@@ -1,5 +1,5 @@
-const Redux = require('redux')
+const Redux = require("redux");
 
 module.exports = Redux.combineReducers({
-  elementRules: require('./element-rules'),
+  elementRules: require("./element-rules"),
 });

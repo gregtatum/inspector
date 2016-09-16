@@ -1460,4 +1460,4 @@ a.post-listing-header-link:hover {
 		height: 190px;
 	}
 }
-`
+`;
