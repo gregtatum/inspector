@@ -1,6 +1,6 @@
 const {DOM, createClass, createFactory} = require("react");
 const {connect} = require("react-redux");
-const {getRule, getRuleDeclaration} = require("../utils/accessors");
+const selectors = require("../selectors");
 
 const RulesSidebar = createFactory(require("./rules-sidebar"));
 const Page = createFactory(require("./page"));
@@ -32,9 +32,6 @@ const Inspector = createClass({
     } = this.props;
 
     // Temporarily do this:
-    const matchedRules = elementRules.get("matchedRules");
-    const styleSheets = elementRules.get("styleSheets");
-    const editing = elementRules.get("editing");
     const isEditingName = elementRules.get("isEditingName");
     const isEditingValue = elementRules.get("isEditingValue");
     const updateQueue = elementRules.get("updateQueue");
@@ -45,9 +42,9 @@ const Inspector = createClass({
         focusOnRedBox: () => dispatch(focusOnRedBox())
       }),
       RulesSidebar({
-        rules: matchedRules.map(id => getRule(styleSheets, id)),
+        rules: selectors.getMatchedRules(this.props),
         ruleProps: {
-          editing: getRuleDeclaration(styleSheets, editing),
+          editingDeclaration: selectors.getEditingDeclaration(this.props),
           isEditingName: isEditingName,
           isEditingValue: isEditingValue,
           editName: (rule, declaration) => dispatch(editDeclarationName(rule, declaration)),

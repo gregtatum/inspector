@@ -8,7 +8,7 @@ const Rule = createClass({
   render() {
     const {
       rule,
-      editing,
+      editingDeclaration,
       isEditingName,
       isEditingValue,
       editName,
@@ -35,7 +35,7 @@ const Rule = createClass({
           const value = declaration.get("value");
           const id = declaration.get("id");
 
-          const isEditingThis = editing && declaration === editing.declaration;
+          const isEditingThis = declaration === editingDeclaration;
           return (
             div({className: "rule-declaration", key: id + name + value},
               span({}, "  "),

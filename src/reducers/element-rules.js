@@ -1,14 +1,10 @@
 const {actions} = require("../constants");
 const {
-  findNextDeclaration,
-  getRuleDeclaration,
-  getRule,
   getStyleSheetRuleDeclaration,
   idMatcher
 } = require("../utils/accessors.js");
-const {parseStyleSheet, parseOnlyDeclarations} = require("../parser");
-const {getStyleSheetID} = require("../utils/ids");
-const {List, Map, fromJS} = require("immutable");
+const {parseOnlyDeclarations} = require("../parser");
+const {List, Map} = require("immutable");
 
 const handlers = {};
 
@@ -16,61 +12,31 @@ const DEFAULT_STATE = Map({
   // DOMNode
   element: null,
   // [ Rule, ... ]
-  matchedRules: List(),
+  matchedRuleIDs: List(),
   // [ StyleSheet, ... ]
   styleSheets: List(),
   // { style, rule, declaration }
-  editing: null,
+  editingDeclarationKeyPath: null,
   isEditingName: false,
   isEditingValue: false,
   updateQueue: Promise.resolve()
 });
 
-handlers[actions.ADD_STYLE_SHEET] = function(state, {cssStyleSheet, text}) {
-  const id = getStyleSheetID();
-  const rules = fromJS(parseStyleSheet(text));
-  return state.updateIn(
-    ["styleSheets"],
-    styleSheets => styleSheets.push(Map({
-      id,
-      cssStyleSheet,
-      rules,
-      text,
-    }))
-  );
-};
-
-handlers[actions.SET_FOCUSED_ELEMENT] = function(state, action) {
-  const {element} = action;
-  const matchedRules = List([
-    ...state.get("styleSheets")
-      .map(styleSheet => matchRules(styleSheet.get("rules"), element))
-      // Flatten the rules.
-      .reduce((a, b) => ([...a, ...b]), [])
-      // Hack to make the stylesheet in the correct order
-      .reverse()
-  ]);
-
-  return state.merge({element, matchedRules});
-};
+function _idMatcher(id) {
+  return item => item.get("id") === id;
+}
 
 handlers[actions.EDIT_DECLARATION_NAME] = function(state, action) {
-  const {rule, declaration} = action;
-
   return state.merge({
-    editing: Map({
-      rule: rule.get("id"),
-      declaration: declaration.get("id")
-    }),
+    editingDeclarationKeyPath: action.keyPath,
     isEditingName: true,
     isEditingValue: false
   });
 };
 
 handlers[actions.EDIT_DECLARATION_VALUE] = function(state, action) {
-  const {rule, declaration} = action;
   return state.merge({
-    editing: Map({rule: rule.get("id"), declaration: declaration.get("id")}),
+    editingDeclarationKeyPath: action.keyPath,
     isEditingName: false,
     isEditingValue: true
   });
@@ -78,42 +44,9 @@ handlers[actions.EDIT_DECLARATION_VALUE] = function(state, action) {
 
 handlers[actions.STOP_EDITING_DECLARATION] = function(state, action) {
   return state.merge({
-    editing: null,
+    editingDeclarationKeyPath: null,
     isEditingName: false,
     isEditingValue: false
-  });
-};
-
-handlers[actions.TAB_THROUGH_DECLARATIONS] = function(state, action) {
-  const {direction} = action;
-  const styleSheets = state.get("styleSheets");
-  const isEditingName = state.get("isEditingName");
-  const isEditingValue = state.get("isEditingValue");
-  const matchedRuleIDs = state.get("matchedRules");
-
-  // Assert that the state is correct for this type of action.
-  console.assert(isEditingName !== isEditingValue, "Is editing either name or value.");
-  console.assert(Boolean(state.get("editing")), "Is editing something.");
-
-  const {rule, declaration} = getRuleDeclaration(styleSheets, state.get("editing"));
-  const matchedRules = matchedRuleIDs.map(id => getRule(styleSheets, id));
-
-  // The declaration won't change, so flip editing the name and value.
-  if ((direction === 1 && isEditingName) || (direction === -1 && isEditingValue)) {
-    return state.merge({
-      isEditingName: !isEditingName,
-      isEditingValue: !isEditingValue,
-    });
-  }
-
-  // The declaration is different, find the next in the proper direction.
-  const next = findNextDeclaration(direction, matchedRules, rule, declaration);
-  const hasNext = Boolean(next);
-
-  return state.merge({
-    isEditingName: !isEditingName && hasNext,
-    isEditingValue: !isEditingValue && hasNext,
-    editing: next
   });
 };
 
@@ -194,41 +127,6 @@ handlers[actions.PASTE_DECLARATIONS] = function(state, action) {
   );
 };
 
-function matchRules(rules, element) {
-  if (!element) {
-    return [];
-  }
-  return rules.reduce((matches, rule) => {
-    if (rule.condition) {
-      return matchMediaQuery(matches, rule, element);
-    }
-    return matchCSSRule(matches, rule, element);
-  }, []);
-}
-
-function matchMediaQuery(matches, rule, element) {
-  if (window.matchMedia(rule.get("condition"))) {
-    const childRules = matchRules(rule.get("rules"), element);
-    if (childRules) {
-      return matches.concat(childRules);
-    }
-  }
-  return matches;
-}
-
-function matchCSSRule(matches, rule, element) {
-  // Walk up the tree, and see if anything above it matches.
-  do {
-    if (element.matches(rule.get("selector"))) {
-      matches.push(rule.get("id"));
-      return matches;
-    }
-    element = element.parentElement;
-  } while (element);
-
-  return matches;
-}
-
 function replaceTextInOffset(text, value, offset) {
   return (
     text.substring(0, offset.get(0)) +
@@ -280,10 +178,185 @@ function updateDeclarationInRules(rules, ruleID, declarationID, key, value) {
   return rules.setIn(keyPath, value);
 }
 
-module.exports = function(state = DEFAULT_STATE, action) {
+function update(state = DEFAULT_STATE, action) {
+  switch (action.type) {
+    case actions.ADD_STYLE_SHEET:
+      return state.updateIn(
+        ["styleSheets"],
+        styleSheets => styleSheets.push(action.styleSheet)
+      );
+
+    case actions.SET_FOCUSED_ELEMENT:
+      const {element, matchedRuleIDs} = action;
+      return state.merge({element, matchedRuleIDs});
+
+    case actions.TAB_THROUGH_DECLARATIONS:
+      return state.merge({
+        isEditingName: action.isEditingName,
+        isEditingValue: action.isEditingValue,
+        editingDeclarationKeyPath: action.keyPath
+      });
+  }
+
   let handle = handlers[action.type];
   if (handle) {
     return handle(state, action);
   }
   return state;
+}
+
+// --------------------------------------------
+
+function getStyleSheets(state) {
+  return state.elementRules.get("styleSheets");
+}
+
+function getAllRules(state) {
+  return List(
+    getStyleSheets(state)
+      .map(styleSheet => styleSheet.get("rules"))
+      .reduce((a, b) => ([...a, ...b]), [])
+  );
+}
+
+function getMatchedRuleIds(state) {
+  return state.elementRules.get("matchedRuleIDs");
+}
+
+function getMatchedRules(state) {
+  return getMatchedRuleIds(state).map(id => getRule(state, id));
+}
+
+function getStyleSheet(state, styleSheetID) {
+  // Bail out early if no styleSheet is being requested
+  if (!styleSheetID) {
+    return null;
+  }
+
+  return getStyleSheets(state).find(_idMatcher(styleSheetID));
+}
+
+function getRule(state, ruleID, styleSheetID) {
+  // Bail out early if no rule is being requested
+  if (!ruleID) {
+    return null;
+  }
+
+  if (ruleID && styleSheetID) {
+    const styleSheet = getStyleSheet(state, styleSheetID);
+    return styleSheet.get("rules").find(_idMatcher(ruleID));
+  }
+  for (let styleSheet of getStyleSheets(state)) {
+    const rule = styleSheet.get("rules").find(_idMatcher(ruleID));
+    if (rule) {
+      return rule;
+    }
+  }
+}
+
+function getDeclaration(state, declarationID, ruleID, styleSheetID) {
+  // Bail out early if no declaration is being requested
+  if (!declarationID) {
+    return null;
+  }
+  return state.elementRules(getDeclarationKeyPath.apply(this, arguments));
+}
+
+function getIsEditingName(state) {
+  return state.elementRules.get("isEditingName");
+}
+
+function getIsEditingValue(state) {
+  return state.elementRules.get("isEditingValue");
+}
+
+function getDeclarationHeirarchy(state, declarationID) {
+  for (let styleSheet of getStyleSheets(state)) {
+    for (let rule of styleSheet.get("rules")) {
+      for (let declaration of rule.get("declarations")) {
+        if (declaration.get("id") === declarationID) {
+          return {styleSheet, rule, declaration};
+        }
+      }
+    }
+  }
+}
+
+function getEditingDeclaration(state) {
+  const keyPath = getEditingDeclarationKeyPath(state);
+  return keyPath
+    ? state.elementRules.getIn(keyPath)
+    : null;
+}
+
+function getEditingRule(state) {
+  const keyPath = getEditingDeclarationKeyPath(state);
+  return keyPath
+    ? state.elementRules.getIn(keyPath.slice(0, 4))
+    : null;
+}
+
+function getEditingStyleSheet(state) {
+  const keyPath = getEditingDeclarationKeyPath(state);
+  return keyPath
+    ? state.elementRules.getIn(keyPath.slice(0, 2))
+    : null;
+}
+
+function getEditingDeclarationKeyPath(state) {
+  return state.elementRules.get("editingDeclarationKeyPath");
+}
+
+/**
+ * Either match an ID, or do a depth first search to find the keypath.
+ */
+function _getKeyPathByIdOrSearch(keyPath, parent, keys) {
+  if (keys.length === 0) {
+    return keyPath;
+  }
+  const key = keys[0];
+  const id = keys[1];
+  const nextKeys = keys.slice(2, keys.length);
+  const children = parent.get(key);
+
+  if (id) {
+    const index = children.findIndex(idMatcher(id));
+    const child = children.get(index);
+    return _getKeyPathByIdOrSearch(keyPath.concat([key, index]), child, nextKeys);
+  } else {
+    return children.reduce((result, child, index) => {
+      return result ?
+        result :
+        _getKeyPathByIdOrSearch(keyPath.concat([key, index]), child, nextKeys);
+    }, null);
+  }
+}
+
+function getDeclarationKeyPath(state, declarationID, ruleID, styleSheetID) {
+  const keys = [
+    "styleSheets", styleSheetID,
+    "rules", ruleID,
+    "declarations", declarationID
+  ];
+
+  return List(_getKeyPathByIdOrSearch([], state.elementRules, keys));
+}
+
+module.exports = {
+  update,
+  getStyleSheets,
+  getAllRules,
+  getMatchedRuleIds,
+  getMatchedRules,
+  getStyleSheet,
+  getRule,
+  getDeclaration,
+  getDeclarationHeirarchy,
+  getEditingDeclaration,
+  getEditingRule,
+  getEditingStyleSheet,
+  getEditingDeclarationKeyPath,
+  getDeclarationKeyPath,
+  getIsEditingName,
+  getIsEditingValue
 };
