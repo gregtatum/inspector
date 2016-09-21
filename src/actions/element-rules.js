@@ -1,20 +1,21 @@
-const {actions} = require("../constants");
+const {actions: constants} = require("../constants");
 const {Map, List, fromJS} = require("immutable");
 const {parseStyleSheet, parseOnlyDeclarations} = require("../parser");
-const {getStyleSheetID} = require("../utils/ids");
+const {getStyleSheetID, idMatcher} = require("../utils/ids");
+const dom = require("../utils/dom");
 const selectors = require("../selectors");
-const {idMatcher} = require("../utils/accessors.js");
+const actions = {};
 
-function addPageStyleSheet() {
-  const styleEl = document.querySelector("#page-style");
-  const cssStyleSheet = [...document.styleSheets].find(
+actions.addPageStyleSheet = function() {
+  const styleEl = dom.querySelector("#page-style");
+  const cssStyleSheet = dom.getStyleSheets().find(
     sheet => sheet.ownerNode === styleEl);
-  return addStyleSheet(cssStyleSheet);
-}
+  return actions.addStyleSheet(cssStyleSheet);
+};
 
-function addStyleSheet(cssStyleSheet) {
+actions.addStyleSheet = function(cssStyleSheet) {
   // TODO - Handle external stylesheets
-  const text = cssStyleSheet.ownerNode.innerText;
+  const text = cssStyleSheet.ownerNode.innerHTML;
 
   const styleSheet = Map({
     id: getStyleSheetID(),
@@ -23,39 +24,39 @@ function addStyleSheet(cssStyleSheet) {
     text,
   });
 
-  return {type: actions.ADD_STYLE_SHEET, styleSheet};
-}
+  return {type: constants.ADD_STYLE_SHEET, styleSheet};
+};
 
-function setFocusedElement(element) {
+actions.setFocusedElement = function(element) {
   return function(dispatch, getState) {
     const rules = selectors.getAllRules(getState());
-    const matchedRuleIDs = _matchRules(rules, element)
+    const matchedRuleIDs = matchRules(rules, element)
       // Temporary hack to make the stylesheet in the correct order.
       .reverse();
 
     return dispatch({
-      type: actions.SET_FOCUSED_ELEMENT,
+      type: constants.SET_FOCUSED_ELEMENT,
       element,
       matchedRuleIDs
     });
   };
-}
+};
 
-function _matchRules(rules, element) {
+function matchRules(rules, element) {
   if (!element) {
     return List();
   }
   return rules.reduce((matches, rule) => {
     if (rule.condition) {
-      return _matchMediaQuery(matches, rule, element);
+      return matchMediaQuery(matches, rule, element);
     }
-    return _matchCSSRule(matches, rule, element);
+    return matchCSSRule(matches, rule, element);
   }, List());
 }
 
-function _matchMediaQuery(matches, rule, element) {
-  if (window.matchMedia(rule.get("condition"))) {
-    const childRules = _matchRules(rule.get("rules"), element);
+function matchMediaQuery(matches, rule, element) {
+  if (dom.matchMedia(rule.get("condition"))) {
+    const childRules = matchRules(rule.get("rules"), element);
     if (childRules) {
       return matches.concat(childRules);
     }
@@ -63,7 +64,7 @@ function _matchMediaQuery(matches, rule, element) {
   return matches;
 }
 
-function _matchCSSRule(matches, rule, element) {
+function matchCSSRule(matches, rule, element) {
   // Walk up the tree, and see if anything above it matches.
   do {
     if (element.matches(rule.get("selector"))) {
@@ -75,7 +76,7 @@ function _matchCSSRule(matches, rule, element) {
   return matches;
 }
 
-function _findNextDeclaration(direction, rules, rule, declaration) {
+function findNextDeclaration(direction, rules, rule, declaration) {
   // The declaration can be undefined if the last searched rule did not have
   // any declarations.
   if (declaration) {
@@ -108,42 +109,42 @@ function _findNextDeclaration(direction, rules, rule, declaration) {
       };
     }
     // No declarations were found on this rule, start searching the next rule recursively.
-    return _findNextDeclaration(direction, rules, nextRule);
+    return findNextDeclaration(direction, rules, nextRule);
   }
 
   // There are no more declarations to be found. Return null.
   return null;
 }
 
-function focusOnRedBox() {
-  return setFocusedElement(document.querySelector(".page-container .red-box"));
-}
+actions.focusOnRedBox = function() {
+  return actions.setFocusedElement(dom.querySelector(".page-container .red-box"));
+};
 
-function editDeclarationName(rule, declaration) {
+actions.editDeclarationName = function(rule, declaration) {
   return function(dispatch, getState) {
     const keyPath = selectors.getDeclarationKeyPath(
       getState(), declaration.get("id"), rule.get("id"));
 
     return dispatch({
-      type: actions.EDIT_DECLARATION_NAME,
+      type: constants.EDIT_DECLARATION_NAME,
       keyPath
     });
   };
-}
+};
 
-function editDeclarationValue(rule, declaration) {
+actions.editDeclarationValue = function(rule, declaration) {
   return function(dispatch, getState) {
     const keyPath = selectors.getDeclarationKeyPath(
       getState(), declaration.get("id"), rule.get("id"));
 
     return dispatch({
-      type: actions.EDIT_DECLARATION_VALUE,
+      type: constants.EDIT_DECLARATION_VALUE,
       keyPath
     });
   };
-}
+};
 
-function pasteDeclarations(declaration, text) {
+actions.pasteDeclarations = function(declaration, text) {
   return function(dispatch, getState) {
     // Select everything first to make the update steps easier to understand.
     const state = getState();
@@ -175,12 +176,12 @@ function pasteDeclarations(declaration, text) {
     // by one when updating them.
     newDeclarations = newDeclarations.map(newDeclaration => {
       return newDeclaration.update("offset", () => {
-        return _updateOffsets(newDeclaration, 0, (textOffset.get(0) - 1));
+        return updateOffsets(newDeclaration, 0, (textOffset.get(0) - 1));
       });
     });
 
     // Update the rule offsets.
-    newRules = _updateRuleOffsets(rules, textOffset, text.length)
+    newRules = updateRuleOffsets(rules, textOffset, text.length)
       // Splice in the new declarations.
       .updateIn([ruleIndex, "declarations"], declarations => {
         return declarations.splice(declarationIndex, 1, ...newDeclarations);
@@ -189,18 +190,18 @@ function pasteDeclarations(declaration, text) {
     const styleSheetIndex = selectors.getStyleSheets(getState()).indexOf(styleSheet);
 
     dispatch({
-      type: actions.REPLACE_STYLESHEET_RULES,
+      type: constants.REPLACE_STYLESHEET_RULES,
       rules: newRules,
       styleSheetIndex
     });
   };
-}
+};
 
-function stopEditingDeclaration() {
-  return {type: actions.STOP_EDITING_DECLARATION};
-}
+actions.stopEditingDeclaration = function() {
+  return {type: constants.STOP_EDITING_DECLARATION};
+};
 
-function tabThroughDeclarations(direction) {
+actions.tabThroughDeclarations = function(direction) {
   return function(dispatch, getState) {
     const isEditingName = selectors.getIsEditingName(getState());
     const isEditingValue = selectors.getIsEditingValue(getState());
@@ -224,7 +225,7 @@ function tabThroughDeclarations(direction) {
     }
 
     // The declaration is different, find the next in the proper direction.
-    const next = _findNextDeclaration(direction, matchedRules, rule, declaration);
+    const next = findNextDeclaration(direction, matchedRules, rule, declaration);
     const hasNext = Boolean(next);
     const keyPath = hasNext
       ? selectors.getDeclarationKeyPath(getState(), next.declarationID, next.ruleID)
@@ -237,40 +238,41 @@ function tabThroughDeclarations(direction) {
       isEditingValue: !isEditingValue && hasNext,
     });
   };
-}
+};
 
-function setDeclarationName(updateQueue, declaration, value) {
-  return updateDeclaration(updateQueue, declaration.get("id"), "name", value);
-}
+actions.setDeclarationName = function(updateQueue, declarationID, value) {
+  return actions.updateDeclaration(updateQueue, declarationID, "name", value);
+};
 
-function setDeclarationValue(updateQueue, declaration, value) {
-  return updateDeclaration(updateQueue, declaration.get("id"), "value", value);
-}
+actions.setDeclarationValue = function(updateQueue, declarationID, value) {
+  return actions.updateDeclaration(updateQueue, declarationID, "value", value);
+};
 
-function updateDeclaration(updateQueue, declarationID, key, value) {
+actions.updateDeclaration = function(updateQueue, declarationID, key, value) {
   return function(dispatch, getState) {
-    const {styleSheet, rule, declaration} =
-      selectors.getDeclarationHeirarchy(getState(), declarationID);
-    const styleSheetIndex = selectors.getStyleSheetIndex(getState(), styleSheet);
-
-    // Update the rules.
-    const offset = declaration.get("offsets").get(key);
-    const text = _replaceTextInOffset(styleSheet.get("text"), value, offset);
-    const offsetRules = _updateRuleOffsets(styleSheet.get("rules"), offset, value.length);
-    const rules = _updateDeclarationInRules(offsetRules, rule.get("id"), declarationID, key,
-                                           value);
-
-    // Update the stylesheet.
-    // TODO - Handle external stylesheets.
-    let cssStyleSheet = styleSheet.get("cssStyleSheet");
-    const cssStyleSheetIndex = [...document.styleSheets].indexOf(cssStyleSheet);
-    cssStyleSheet.ownerNode.innerHTML = text;
-    cssStyleSheet = document.styleSheets[cssStyleSheetIndex];
-
     const nextQueue = updateQueue.then(
       () => {
+        const {styleSheet, rule, declaration} =
+          selectors.getDeclarationHeirarchy(getState(), declarationID);
+        const styleSheetIndex = selectors.getStyleSheetIndex(getState(), styleSheet);
+
+        // Update the rules.
+        const offset = declaration.get("offsets").get(key);
+        const text = replaceTextInOffset(styleSheet.get("text"), value, offset);
+        const offsetRules = updateRuleOffsets(styleSheet.get("rules"), offset,
+                                              value.length);
+        const rules = updateDeclarationInRules(offsetRules, rule.get("id"),
+                                               declarationID, key, value);
+
+        // Update the stylesheet.
+        // TODO - Handle external stylesheets.
+        let cssStyleSheet = styleSheet.get("cssStyleSheet");
+        const cssStyleSheetIndex = dom.getStyleSheets().indexOf(cssStyleSheet);
+        cssStyleSheet.ownerNode.innerHTML = text;
+        cssStyleSheet = dom.getStyleSheets()[cssStyleSheetIndex];
+
         dispatch({
-          type: actions.UPDATE_DECLARATION,
+          type: constants.UPDATE_DECLARATION,
           styleSheetIndex,
           text,
           rules,
@@ -282,40 +284,40 @@ function updateDeclaration(updateQueue, declarationID, key, value) {
       }
     );
 
-    dispatch({type: actions.ADD_TO_UPDATE_QUEUE, updateQueue: nextQueue});
+    dispatch({type: constants.ADD_TO_UPDATE_QUEUE, updateQueue: nextQueue});
   };
-}
+};
 
-function _replaceTextInOffset(text, value, offset) {
+function replaceTextInOffset(text, value, offset) {
   return (
     text.substring(0, offset.get(0)) +
     value +
-    text.substring(offset.get(1), text.length - 1)
+    text.substring(offset.get(1), text.length)
   );
 }
 
-function _updateRuleOffsets(rules, originalOffset, length) {
+function updateRuleOffsets(rules, originalOffset, length) {
   const start = originalOffset.get(0);
   const end = originalOffset.get(1);
   const changeInLength = length - (end - start);
 
   return rules.map(rule => rule.merge({
-    offsets: _updateOffsets(rule, start, changeInLength),
+    offsets: updateOffsets(rule, start, changeInLength),
     declarations: rule.get("declarations").map(declaration => {
       return declaration.merge({
-        offsets: _updateOffsets(declaration, start, changeInLength)
+        offsets: updateOffsets(declaration, start, changeInLength)
       });
     }),
   }));
 }
 
-function _updateOffsets(object, start, changeInLength) {
+function updateOffsets(object, start, changeInLength) {
   return object.get("offsets").map(offset => {
-    return _updateOffset(offset, start, changeInLength);
+    return updateOffset(offset, start, changeInLength);
   });
 }
 
-function _updateOffset(offset, start, changeInLength) {
+function updateOffset(offset, start, changeInLength) {
   const offset0 = offset.get(0);
   const offset1 = offset.get(1);
   if (offset0 > start || offset1 > start) {
@@ -327,7 +329,7 @@ function _updateOffset(offset, start, changeInLength) {
   return offset;
 }
 
-function _updateDeclarationInRules(rules, ruleID, declarationID, key, value) {
+function updateDeclarationInRules(rules, ruleID, declarationID, key, value) {
   const ruleIndex = rules.findIndex(idMatcher(ruleID));
   const declarationIndex = rules
     .get(ruleIndex)
@@ -339,16 +341,4 @@ function _updateDeclarationInRules(rules, ruleID, declarationID, key, value) {
   return rules.setIn(keyPath, value);
 }
 
-module.exports = {
-  addPageStyleSheet,
-  addStyleSheet,
-  setFocusedElement,
-  focusOnRedBox,
-  editDeclarationName,
-  editDeclarationValue,
-  stopEditingDeclaration,
-  tabThroughDeclarations,
-  setDeclarationName,
-  setDeclarationValue,
-  pasteDeclarations,
-};
+module.exports = actions;

@@ -72,9 +72,9 @@ interface StyleSheet {
 
 ## The CSSStyleSheet
 
-The best way to begin tackling the problem of buliding a CSS inspector is knowing what the browser provides. The [CSSStyleSheet] is the basic unit to start exploring. It inherits from the [StyleSheet] (oh so C++). The `StyleSheet.webidl` already enumerates the properties that are accessible. Since this is an object model, it is helpful to start traveling down into it. A StyleSheet object represents all of the text in one file or the `.innerText` of a `<style>` node.
+The best way to begin tackling the problem of buliding a CSS inspector is knowing what the browser provides. The [CSSStyleSheet] is the basic unit to start exploring. It inherits from the [StyleSheet] (oh so C++). The `StyleSheet.webidl` already enumerates the properties that are accessible. Since this is an object model, it is helpful to start traveling down into it. A StyleSheet object represents all of the text in one file or the `.innerHTML` of a `<style>` node.
 
-The following represents what a CSSStyleSheet would represent. It's an interface to the internal representation of that structure. For instance `document.styleSheets[0].ownerNode` would be the `<style>` element, while `ownerNode.innerText` would be the actual text contents.
+The following represents what a CSSStyleSheet would represent. It's an interface to the internal representation of that structure. For instance `document.styleSheets[0].ownerNode` would be the `<style>` element, while `ownerNode.innerHTML` would be the actual text contents.
 
 ```css
 <style>
@@ -155,11 +155,11 @@ declarations.cssText;
 //> "padding: 2em 0em 1em; line-height: 1;"
 ```
 
-The CSS can be updated on the fly using an object model that is not too hard to interact with. This is great for the use-case of working on a web application that needs some kind of dynamic CSS manipulation, but there is a big hole in making this work for the inspector. To illustrate the problem, observe the value of the `<style>` element's innerText after running the above javascript.
+The CSS can be updated on the fly using an object model that is not too hard to interact with. This is great for the use-case of working on a web application that needs some kind of dynamic CSS manipulation, but there is a big hole in making this work for the inspector. To illustrate the problem, observe the value of the `<style>` element's innerHTML after running the above javascript.
 
 ```js
-// Retrieve the style element's innerText
-styleSheet.ownerNode.innerText;
+// Retrieve the style element's innerHTML
+styleSheet.ownerNode.innerHTML;
 ```
 
 ```css
@@ -180,7 +180,7 @@ The browser doesn't provide the exact information needed to build an inspector, 
 ```js
 // Get the style element.
 const styleElement = document.styleSheets[0].ownerNode;
-const text = styleElement.innerText;
+const text = styleElement.innerHTML;
 
 // Rewrite the 1em to 12px.
 const oldValue = "1em";
@@ -194,8 +194,8 @@ const offsetEnd = offsetStart + oldValue.length;
 const beginning = text.substring(0, offsetStart);
 const end = text.substring(offsetEnd, text.length - 1);
 
-// Rewrite the node's innerText.
-styleElement.innerText = beginning + newValue + end;
+// Rewrite the node's innerHTML.
+styleElement.innerHTML = beginning + newValue + end;
 ```
 
 The result with "1em" switched to "12px":

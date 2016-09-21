@@ -10,4 +10,5 @@ module.exports = {
   getDeclarationID: () => "declaration-" + declarationID++,
   getStyleSheetID: () => "stylesheet-" + styleSheetID++,
   getRevisionID: () => "revision-" + revisionID++,
+  idMatcher: (id) => item => item.get("id") === id
 };
