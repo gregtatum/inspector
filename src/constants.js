@@ -8,7 +8,7 @@ const actions = Object.freeze({
   UPDATE_DECLARATION: "update-declaration",
   ADD_TO_UPDATE_QUEUE: "add-to-update-queue",
   UPDATE_STYLESHEET: "update-stylesheet",
-  PASTE_DECLARATIONS: "paste-declarations"
+  REPLACE_STYLESHEET_RULES: "replace-stylesheet-rules"
 });
 
 module.exports = {actions};

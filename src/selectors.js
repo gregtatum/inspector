@@ -19,4 +19,5 @@ module.exports = {
   getDeclarationKeyPath: elementRules.getDeclarationKeyPath,
   getEditingRule: elementRules.getEditingRule,
   getEditingStyleSheet: elementRules.getEditingStyleSheet,
+  getStyleSheetIndex: elementRules.getStyleSheetIndex,
 };

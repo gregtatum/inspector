@@ -3,6 +3,7 @@ const {Map, List, fromJS} = require("immutable");
 const {parseStyleSheet, parseOnlyDeclarations} = require("../parser");
 const {getStyleSheetID} = require("../utils/ids");
 const selectors = require("../selectors");
+const {idMatcher} = require("../utils/accessors.js");
 
 function addPageStyleSheet() {
   const styleEl = document.querySelector("#page-style");
@@ -143,7 +144,56 @@ function editDeclarationValue(rule, declaration) {
 }
 
 function pasteDeclarations(declaration, text) {
-  return {type: actions.PASTE_DECLARATIONS, declaration, text};
+  return function(dispatch, getState) {
+    // Select everything first to make the update steps easier to understand.
+    const state = getState();
+    const declarationID = declaration.get("id");
+    const textOffset = declaration.getIn(["offsets", "text"]);
+    const {
+      styleSheet,
+      rule
+    } = selectors.getDeclarationHeirarchy(getState(), declarationID);
+    const rules = styleSheet.get("rules");
+    const ruleIndex = rules.indexOf(rule);
+    const declarationIndex = rule.get("declarations").indexOf(declaration);
+
+    let newDeclarations;
+    let newRules;
+
+    try {
+      newDeclarations = fromJS(parseOnlyDeclarations(text));
+    } catch (e) {
+      return state;
+    }
+
+    if (newDeclarations.size === 0) {
+      return state;
+    }
+
+    // Adjust the offsets to be at the same place as the targeted declaration.
+    // The offsets will be 1 off because a "{" was added to the lexing, so subtract
+    // by one when updating them.
+    newDeclarations = newDeclarations.map(newDeclaration => {
+      return newDeclaration.update("offset", () => {
+        return _updateOffsets(newDeclaration, 0, (textOffset.get(0) - 1));
+      });
+    });
+
+    // Update the rule offsets.
+    newRules = _updateRuleOffsets(rules, textOffset, text.length)
+      // Splice in the new declarations.
+      .updateIn([ruleIndex, "declarations"], declarations => {
+        return declarations.splice(declarationIndex, 1, ...newDeclarations);
+      });
+
+    const styleSheetIndex = selectors.getStyleSheets(getState()).indexOf(styleSheet);
+
+    dispatch({
+      type: actions.REPLACE_STYLESHEET_RULES,
+      rules: newRules,
+      styleSheetIndex
+    });
+  };
 }
 
 function stopEditingDeclaration() {
@@ -190,28 +240,103 @@ function tabThroughDeclarations(direction) {
 }
 
 function setDeclarationName(updateQueue, declaration, value) {
-  return function(dispatch) {
-    updateDeclaration(dispatch, updateQueue, declaration.get("id"), "name", value);
-  };
+  return updateDeclaration(updateQueue, declaration.get("id"), "name", value);
 }
 
 function setDeclarationValue(updateQueue, declaration, value) {
-  return function(dispatch) {
-    updateDeclaration(dispatch, updateQueue, declaration.get("id"), "value", value);
+  return updateDeclaration(updateQueue, declaration.get("id"), "value", value);
+}
+
+function updateDeclaration(updateQueue, declarationID, key, value) {
+  return function(dispatch, getState) {
+    const {styleSheet, rule, declaration} =
+      selectors.getDeclarationHeirarchy(getState(), declarationID);
+    const styleSheetIndex = selectors.getStyleSheetIndex(getState(), styleSheet);
+
+    // Update the rules.
+    const offset = declaration.get("offsets").get(key);
+    const text = _replaceTextInOffset(styleSheet.get("text"), value, offset);
+    const offsetRules = _updateRuleOffsets(styleSheet.get("rules"), offset, value.length);
+    const rules = _updateDeclarationInRules(offsetRules, rule.get("id"), declarationID, key,
+                                           value);
+
+    // Update the stylesheet.
+    // TODO - Handle external stylesheets.
+    let cssStyleSheet = styleSheet.get("cssStyleSheet");
+    const cssStyleSheetIndex = [...document.styleSheets].indexOf(cssStyleSheet);
+    cssStyleSheet.ownerNode.innerHTML = text;
+    cssStyleSheet = document.styleSheets[cssStyleSheetIndex];
+
+    const nextQueue = updateQueue.then(
+      () => {
+        dispatch({
+          type: actions.UPDATE_DECLARATION,
+          styleSheetIndex,
+          text,
+          rules,
+          cssStyleSheet,
+        });
+      },
+      (error) => {
+        console.error("Update declaration promise rejected", error);
+      }
+    );
+
+    dispatch({type: actions.ADD_TO_UPDATE_QUEUE, updateQueue: nextQueue});
   };
 }
 
-function updateDeclaration(dispatch, updateQueue, declarationID, key, value) {
-  const nextQueue = updateQueue.then(
-    () => {
-      dispatch({type: actions.UPDATE_DECLARATION, declarationID, key, value});
-    },
-    (error) => {
-      console.error("Update declaration promise rejected", error);
-    }
+function _replaceTextInOffset(text, value, offset) {
+  return (
+    text.substring(0, offset.get(0)) +
+    value +
+    text.substring(offset.get(1), text.length - 1)
   );
+}
 
-  dispatch({type: actions.ADD_TO_UPDATE_QUEUE, updateQueue: nextQueue});
+function _updateRuleOffsets(rules, originalOffset, length) {
+  const start = originalOffset.get(0);
+  const end = originalOffset.get(1);
+  const changeInLength = length - (end - start);
+
+  return rules.map(rule => rule.merge({
+    offsets: _updateOffsets(rule, start, changeInLength),
+    declarations: rule.get("declarations").map(declaration => {
+      return declaration.merge({
+        offsets: _updateOffsets(declaration, start, changeInLength)
+      });
+    }),
+  }));
+}
+
+function _updateOffsets(object, start, changeInLength) {
+  return object.get("offsets").map(offset => {
+    return _updateOffset(offset, start, changeInLength);
+  });
+}
+
+function _updateOffset(offset, start, changeInLength) {
+  const offset0 = offset.get(0);
+  const offset1 = offset.get(1);
+  if (offset0 > start || offset1 > start) {
+    return List([
+      offset0 > start ? offset0 + changeInLength : offset0,
+      offset1 > start ? offset1 + changeInLength : offset1
+    ]);
+  }
+  return offset;
+}
+
+function _updateDeclarationInRules(rules, ruleID, declarationID, key, value) {
+  const ruleIndex = rules.findIndex(idMatcher(ruleID));
+  const declarationIndex = rules
+    .get(ruleIndex)
+    .get("declarations")
+    .findIndex(idMatcher(declarationID));
+
+  const keyPath = [ruleIndex, "declarations", declarationIndex, key];
+
+  return rules.setIn(keyPath, value);
 }
 
 module.exports = {
