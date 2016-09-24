@@ -2,7 +2,7 @@ const test = require("tape");
 const {styleSheetText1, styleSheetText2} = require("./fixtures/style-sheets");
 const {twoStyleSheetsStore} = require("./fixtures/stores");
 const selectors = require("../src/selectors");
-const state = twoStyleSheets().getState();
+const state = twoStyleSheetsStore().getState();
 
 test("selectors.getStyleSheets", t => {
   const styleSheets = selectors.getStyleSheets(state);
@@ -76,7 +76,11 @@ test("selectors.getDeclaration", t => {
 });
 
 test("selectors.getDeclarationHeirarchy", t => {
-  const {styleSheet, rule, declaration} = selectors.getDeclarationHeirarchy(state, "declaration-8");
+  const {
+    styleSheet,
+    rule,
+    declaration
+  } = selectors.getDeclarationHeirarchy(state, "declaration-8");
 
   t.equal(styleSheet.get("id"), "stylesheet-0", "Fetched the stylesheet.");
   t.equal(declaration.get("id"), "declaration-8", "Fetched the declaration.");

@@ -62,13 +62,16 @@ function createRule(token) {
     },
     // Array of declaration objects.
     declarations: null,
+    whitespace: {
+      beforeSelector: "",
+      afterSelector: "",
+    }
   };
 }
 
 /**
  * Declarations holds information about a CSSStyleDeclaration.
  * https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration
- * @param {object} - The initial token from the CSSLexer.
  *
  * @property {string} id            - A unique id that increments from 0.
  * @property {string} name          - The name of the declaration
@@ -81,19 +84,25 @@ function createRule(token) {
  * @property {array}  offsets.name  - [begin, end] of the entire name portion
  * @property {array}  offsets.value - [begin, end] of the entire value portion
  */
-function createDeclaration({text, startOffset, endOffset}) {
+function createDeclaration() {
   return {
     id: getDeclarationID(),
-    name: text,
+    name: "",
     value: "",
     // priority: "",
     // terminator: "",
     // enabled: true,
     offsets: {
       // comment: null,
-      text: [startOffset, endOffset],
-      name: [startOffset, endOffset],
+      text: [0, 0],
+      name: [0, 0],
       value: [0, 0]
+    },
+    whitespace: {
+      beforeName: "",
+      afterName: "",
+      beforeValue: "",
+      afterValue: ""
     }
   };
 }

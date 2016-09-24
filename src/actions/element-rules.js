@@ -1,6 +1,6 @@
 const {actions: constants} = require("../constants");
 const {Map, List, fromJS} = require("immutable");
-const {parseStyleSheet, parseOnlyDeclarations} = require("../parser");
+const {parseStyleSheet, parseDeclarations} = require("../parser");
 const {getStyleSheetID, idMatcher} = require("../utils/ids");
 const dom = require("../utils/dom");
 const selectors = require("../selectors");
@@ -162,7 +162,7 @@ actions.pasteDeclarations = function(declaration, text) {
     let newRules;
 
     try {
-      newDeclarations = fromJS(parseOnlyDeclarations(text));
+      newDeclarations = fromJS(parseDeclarations(text));
     } catch (e) {
       return state;
     }
@@ -172,11 +172,9 @@ actions.pasteDeclarations = function(declaration, text) {
     }
 
     // Adjust the offsets to be at the same place as the targeted declaration.
-    // The offsets will be 1 off because a "{" was added to the lexing, so subtract
-    // by one when updating them.
     newDeclarations = newDeclarations.map(newDeclaration => {
       return newDeclaration.update("offset", () => {
-        return updateOffsets(newDeclaration, 0, (textOffset.get(0) - 1));
+        return updateOffsets(newDeclaration, 0, textOffset.get(0));
       });
     });
 
@@ -208,7 +206,7 @@ actions.tabThroughDeclarations = function(direction) {
     const matchedRules = selectors.getMatchedRules(getState());
     const declaration = selectors.getEditingDeclaration(getState());
     const rule = selectors.getEditingRule(getState());
-    const type = actions.TAB_THROUGH_DECLARATIONS;
+    const type = constants.TAB_THROUGH_DECLARATIONS;
 
     // Assert that the state is correct for this type of action.
     console.assert(isEditingName !== isEditingValue, "Is editing either name or value.");

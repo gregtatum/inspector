@@ -1,5 +1,3 @@
-const {fromJS} = require("immutable");
-const {parseStyleSheet} = require("../../src/parser");
 const createStore = require("../../src/store");
 const {addStyleSheet} = require("../../src/actions/element-rules");
 const {mockCssStyleSheet} = require("../utils");

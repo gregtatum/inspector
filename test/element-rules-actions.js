@@ -2,7 +2,6 @@ const co = require("co");
 const test = require("tape");
 const $ = require("../src/selectors");
 const actions = require("../src/actions/element-rules");
-const dom = require("../src/utils/dom");
 const {assertDeclaration} = require("./utils");
 const {twoStyleSheetsStore, twoStyleSheetsMock, blankStore} = require("./fixtures/stores");
 const {
@@ -122,13 +121,13 @@ test("actions.editDeclarationName/editDeclarationValue/stopEditingDeclaration", 
   t.end();
 });
 
-test("actions.setDeclarationName - basic rewriting", t => {
+test("actions.setDeclarationName - basic rewriting", tt => {
   // Setup the state we want.
   const store = twoStyleSheetsStore();
   const {disableMock} = twoStyleSheetsMock(store);
-  let originalID, originalRule, originalDeclaration;
+  let originalID, originalRule, originalDeclaration, originalStyleSheet;
 
-  t.test(" - The declaration is in an initial state.", t => {
+  tt.test(" - The declaration is in an initial state.", t => {
     originalRule = $.findRuleBySelector(store.getState(), ".page-container > *");
     originalDeclaration = originalRule.getIn(["declarations", 1]);
     originalID = originalDeclaration.get("id");
@@ -145,14 +144,15 @@ test("actions.setDeclarationName - basic rewriting", t => {
     t.end();
   });
 
-  t.test(" - Update a declaration value.", co.wrap(function*(t) {
+  tt.test(" - Update a declaration value.", co.wrap(function*(t) {
     let updateQueue = $.getUpdateQueue(store.getState());
     store.dispatch(actions.setDeclarationValue(updateQueue, originalID, "1000em"));
 
     // Wait for this update queue to be processed
     yield $.getUpdateQueue(store.getState());
 
-    const pageContainerRule = $.findRuleBySelector(store.getState(), ".page-container > *");
+    const pageContainerRule = $.findRuleBySelector(
+      store.getState(), ".page-container > *");
     const widthDeclaration = pageContainerRule.getIn(["declarations", 1]);
     const styleSheet = $.getStyleSheets(store.getState()).get(0);
     const text = styleSheetText1.replace("width: 50px;", "width: 1000em;");
@@ -169,5 +169,5 @@ test("actions.setDeclarationName - basic rewriting", t => {
     t.end();
   }));
 
-  t.end();
+  tt.end();
 });

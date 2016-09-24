@@ -29,9 +29,9 @@ function disableMock() {
 function functionMocker(object, fnName) {
   return function mockedFunction() {
     if (mock) {
-      return mock[fnName].apply(this, arguments);
+      return mock[fnName].apply(mock, arguments);
     }
-    return object[fnName].apply(this, arguments);
+    return object[fnName].apply(object, arguments);
   };
 }
 
