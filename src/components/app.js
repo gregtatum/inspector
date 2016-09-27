@@ -26,39 +26,10 @@ const Inspector = createClass({
   },
 
   render() {
-    const {
-      dispatch,
-      elementRules
-    } = this.props;
-
-    // Temporarily do this:
-    const isEditingName = elementRules.get("isEditingName");
-    const isEditingValue = elementRules.get("isEditingValue");
-    const updateQueue = elementRules.get("updateQueue");
-
-    /* eslint-disable max-len */
     return DOM.div({},
-      Page({
-        focusOnRedBox: () => dispatch(focusOnRedBox())
-      }),
-      RulesSidebar({
-        rules: selectors.getMatchedRules(this.props),
-        ruleProps: {
-          editingDeclaration: selectors.getEditingDeclaration(this.props),
-          isEditingName: isEditingName,
-          isEditingValue: isEditingValue,
-          editName: (rule, declaration) => dispatch(editDeclarationName(rule, declaration)),
-          editValue: (rule, declaration) => dispatch(editDeclarationValue(rule, declaration)),
-          setName: (declaration, name) => dispatch(setDeclarationName(updateQueue, declaration.get("id"), name)),
-          setValue: (declaration, value) => dispatch(setDeclarationValue(updateQueue, declaration.get("id"), value)),
-          stopEditing: () => dispatch(stopEditingDeclaration()),
-          editNext: () => dispatch(tabThroughDeclarations(1)),
-          editPrevious: () => dispatch(tabThroughDeclarations(-1)),
-          valuesPasted: (declaration, text) => dispatch(pasteDeclarations(declaration, text))
-        }
-      })
+      Page(),
+      RulesSidebar()
     );
-    /* eslint-enable max-len */
   }
 });
 

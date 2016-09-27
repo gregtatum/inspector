@@ -1,6 +1,8 @@
 const {DOM: {div}, createClass, createFactory} = require("react");
 const Rule = createFactory(require("./rule"));
 const OffsetTransitionGroup = createFactory(require("./offset-transition-group"));
+const {connect} = require("react-redux");
+const $ = require("../selectors");
 
 const RulesSidebar = createClass({
   displayName: "RulesSidebar",
@@ -28,4 +30,8 @@ const RulesSidebar = createClass({
   }
 });
 
-module.exports = RulesSidebar;
+module.exports = connect(
+  (state, props) => ({
+    rules: $.getMatchedRules(state)
+  })
+)(RulesSidebar);

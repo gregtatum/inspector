@@ -4,7 +4,7 @@ const {parseStyleSheet, parseDeclarations} = require("../parser");
 const {getStyleSheetID, idMatcher} = require("../utils/ids");
 const dom = require("../utils/dom");
 const selectors = require("../selectors");
-const actions = {};
+const actions = module.exports;
 
 actions.addPageStyleSheet = function() {
   const styleEl = dom.querySelector("#page-style");
@@ -338,5 +338,3 @@ function updateDeclarationInRules(rules, ruleID, declarationID, key, value) {
 
   return rules.setIn(keyPath, value);
 }
-
-module.exports = actions;

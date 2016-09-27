@@ -1,28 +1,41 @@
 const {DOM, createClass, createFactory} = require("react");
 const {div, span} = DOM;
 const DeclarationEditor = createFactory(require("./declaration-editor"));
+const {connect} = require("react-redux");
+const {bindActionCreators} = require("redux");
+const $ = require("../selectors");
+const actions = require("../actions");
 
 const Rule = createClass({
   displayName: "Rule",
 
   render() {
     const {
+      // Props:
       rule,
-      editingDeclaration,
-      isEditingName,
-      isEditingValue,
-      editName,
-      editValue,
-      setName,
-      setValue,
-      stopEditing,
-      editNext,
-      editPrevious,
-      valuesPasted
+      // State:
+      state: {
+        editingDeclaration,
+        isEditingName,
+        isEditingValue,
+        updateQueue,
+      },
+      // Actions:
+      actions: {
+        editDeclarationName,
+        editDeclarationValue,
+        setDeclarationName,
+        setDeclarationValue,
+        stopEditingDeclaration,
+        tabThroughDeclarations,
+        pasteDeclarations
+      }
     } = this.props;
 
     const selector = rule.get("selector");
     const declarations = rule.get("declarations");
+    const editNext = () => tabThroughDeclarations(1);
+    const editPrevious = () => tabThroughDeclarations(-1);
 
     return div({className: "rule theme-separator"},
       div({className: "rule-selector"},
@@ -50,9 +63,9 @@ const Rule = createClass({
                 commands: {
                   editNext,
                   editPrevious,
-                  stopEditing,
-                  commitChanges: (text) => setName(declaration, text),
-                  beginEdit: editName,
+                  stopEditing: stopEditingDeclaration,
+                  commitChanges: (text) => setDeclarationName(updateQueue, id, text),
+                  beginEdit: editDeclarationName,
                 }
               }),
               span({className: "rule-declaration-colon"}, ": "),
@@ -69,9 +82,9 @@ const Rule = createClass({
                 commands: {
                   editNext,
                   editPrevious,
-                  stopEditing,
-                  commitChanges: (text) => setValue(declaration, text),
-                  beginEdit: editValue,
+                  stopEditing: stopEditingDeclaration,
+                  commitChanges: (text) => setDeclarationValue(updateQueue, id, text),
+                  beginEdit: editDeclarationValue,
                 }
               }),
               span({className: "rule-declaration-colon"}, ";")
@@ -84,4 +97,24 @@ const Rule = createClass({
   }
 });
 
-module.exports = Rule;
+module.exports = connect(
+  (state, props) => ({
+    state: {
+      editingDeclaration: $.getEditingDeclaration(state),
+      isEditingName: $.getIsEditingName(state),
+      isEditingValue: $.getIsEditingValue(state),
+      updateQueue: $.getUpdateQueue(state)
+    }
+  }),
+  dispatch => ({
+    actions: bindActionCreators({
+      editDeclarationName: actions.editDeclarationName,
+      editDeclarationValue: actions.editDeclarationValue,
+      setDeclarationName: actions.setDeclarationName,
+      setDeclarationValue: actions.setDeclarationValue,
+      stopEditingDeclaration: actions.stopEditingDeclaration,
+      tabThroughDeclarations: actions.tabThroughDeclarations,
+      pasteDeclarations: actions.pasteDeclarations,
+    }, dispatch)
+  })
+)(Rule);

@@ -1,5 +1,8 @@
 const {DOM, createClass} = require("react");
 const {div} = DOM;
+const {connect} = require("react-redux");
+const {bindActionCreators} = require("redux");
+const actions = require("../actions");
 
 const Page = createClass({
   displayName: "Page",
@@ -20,4 +23,9 @@ const Page = createClass({
   }
 });
 
-module.exports = Page;
+module.exports = connect(
+  null,
+  dispatch => bindActionCreators({
+    focusOnRedBox: actions.focusOnRedBox,
+  }, dispatch)
+)(Page);
