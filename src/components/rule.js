@@ -59,7 +59,7 @@ const Rule = createClass({
                 value: name,
                 isEditing: isEditingThis && isEditingName,
                 commitOn: ":",
-                valuesPasted: (text) => valuesPasted(declaration, text),
+                valuesPasted: (text) => pasteDeclarations(declaration, text),
                 commands: {
                   editNext,
                   editPrevious,
@@ -77,7 +77,7 @@ const Rule = createClass({
                 isEditing: isEditingThis && isEditingValue,
                 commitOn: ";",
                 valuesPasted: (text) => {
-                  valuesPasted(declaration, `${name}: ${text}`);
+                  pasteDeclarations(declaration, `${name}: ${text}`);
                 },
                 commands: {
                   editNext,
@@ -100,10 +100,10 @@ const Rule = createClass({
 module.exports = connect(
   (state, props) => ({
     state: {
-      editingDeclaration: $.getEditingDeclaration(state),
-      isEditingName: $.getIsEditingName(state),
-      isEditingValue: $.getIsEditingValue(state),
-      updateQueue: $.getUpdateQueue(state)
+      editingDeclaration: $.editingDeclaration(state),
+      isEditingName: $.isEditingName(state),
+      isEditingValue: $.isEditingValue(state),
+      updateQueue: $.updateQueue(state)
     }
   }),
   dispatch => ({

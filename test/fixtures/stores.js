@@ -3,7 +3,7 @@ const {addStyleSheet} = require("../../src/actions/element-rules");
 const {mockCssStyleSheet} = require("../utils");
 const {styleSheetText1, styleSheetText2} = require("./style-sheets");
 const dom = require("../../src/utils/dom");
-const selectors = require("../../src/selectors");
+const $ = require("../../src/selectors");
 
 module.exports = {
   twoStyleSheetsStore: function() {
@@ -14,7 +14,7 @@ module.exports = {
   },
   twoStyleSheetsMock: function(store) {
     const mock = dom.enableMock();
-    mock.styleSheets = selectors.getStyleSheets(store.getState())
+    mock.styleSheets = $.styleSheets(store.getState())
       .map(styleSheet => styleSheet.get("cssStyleSheet")).toJS();
     return {mock, disableMock: dom.disableMock};
   },

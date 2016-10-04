@@ -1,20 +1,11 @@
 const {DOM, createClass, createFactory} = require("react");
 const {connect} = require("react-redux");
-const selectors = require("../selectors");
 
 const RulesSidebar = createFactory(require("./rules-sidebar"));
 const Page = createFactory(require("./page"));
 
 const {
-  editDeclarationName,
-  editDeclarationValue,
-  setDeclarationName,
-  setDeclarationValue,
-  stopEditingDeclaration,
-  tabThroughDeclarations,
   addPageStyleSheet,
-  focusOnRedBox,
-  pasteDeclarations,
 } = require("../actions/element-rules");
 
 const Inspector = createClass({

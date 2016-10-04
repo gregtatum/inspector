@@ -3,7 +3,7 @@ const {Map, List, fromJS} = require("immutable");
 const {parseStyleSheet, parseDeclarations} = require("../parser");
 const {getStyleSheetID, idMatcher} = require("../utils/ids");
 const dom = require("../utils/dom");
-const selectors = require("../selectors");
+const $ = require("../selectors");
 const actions = module.exports;
 
 actions.addPageStyleSheet = function() {
@@ -29,7 +29,7 @@ actions.addStyleSheet = function(cssStyleSheet) {
 
 actions.setFocusedElement = function(element) {
   return function(dispatch, getState) {
-    const rules = selectors.getAllRules(getState());
+    const rules = $.allRules(getState());
     const matchedRuleIDs = matchRules(rules, element)
       // Temporary hack to make the stylesheet in the correct order.
       .reverse();
@@ -122,7 +122,7 @@ actions.focusOnRedBox = function() {
 
 actions.editDeclarationName = function(rule, declaration) {
   return function(dispatch, getState) {
-    const keyPath = selectors.getDeclarationKeyPath(
+    const keyPath = $.declarationKeyPath(
       getState(), declaration.get("id"), rule.get("id"));
 
     return dispatch({
@@ -134,7 +134,7 @@ actions.editDeclarationName = function(rule, declaration) {
 
 actions.editDeclarationValue = function(rule, declaration) {
   return function(dispatch, getState) {
-    const keyPath = selectors.getDeclarationKeyPath(
+    const keyPath = $.declarationKeyPath(
       getState(), declaration.get("id"), rule.get("id"));
 
     return dispatch({
@@ -153,7 +153,7 @@ actions.pasteDeclarations = function(declaration, text) {
     const {
       styleSheet,
       rule
-    } = selectors.getDeclarationHeirarchy(getState(), declarationID);
+    } = $.declarationHeirarchy(getState(), declarationID);
     const rules = styleSheet.get("rules");
     const ruleIndex = rules.indexOf(rule);
     const declarationIndex = rule.get("declarations").indexOf(declaration);
@@ -185,7 +185,7 @@ actions.pasteDeclarations = function(declaration, text) {
         return declarations.splice(declarationIndex, 1, ...newDeclarations);
       });
 
-    const styleSheetIndex = selectors.getStyleSheets(getState()).indexOf(styleSheet);
+    const styleSheetIndex = $.styleSheets(getState()).indexOf(styleSheet);
 
     dispatch({
       type: constants.REPLACE_STYLESHEET_RULES,
@@ -201,11 +201,11 @@ actions.stopEditingDeclaration = function() {
 
 actions.tabThroughDeclarations = function(direction) {
   return function(dispatch, getState) {
-    const isEditingName = selectors.getIsEditingName(getState());
-    const isEditingValue = selectors.getIsEditingValue(getState());
-    const matchedRules = selectors.getMatchedRules(getState());
-    const declaration = selectors.getEditingDeclaration(getState());
-    const rule = selectors.getEditingRule(getState());
+    const isEditingName = $.isEditingName(getState());
+    const isEditingValue = $.isEditingValue(getState());
+    const matchedRules = $.matchedRules(getState());
+    const declaration = $.editingDeclaration(getState());
+    const rule = $.editingRule(getState());
     const type = constants.TAB_THROUGH_DECLARATIONS;
 
     // Assert that the state is correct for this type of action.
@@ -216,7 +216,7 @@ actions.tabThroughDeclarations = function(direction) {
     if ((direction === 1 && isEditingName) || (direction === -1 && isEditingValue)) {
       return dispatch({
         type,
-        keyPath: selectors.getEditingDeclarationKeyPath(getState()),
+        keyPath: $.editingDeclarationKeyPath(getState()),
         isEditingName: !isEditingName,
         isEditingValue: !isEditingValue,
       });
@@ -226,7 +226,7 @@ actions.tabThroughDeclarations = function(direction) {
     const next = findNextDeclaration(direction, matchedRules, rule, declaration);
     const hasNext = Boolean(next);
     const keyPath = hasNext
-      ? selectors.getDeclarationKeyPath(getState(), next.declarationID, next.ruleID)
+      ? $.declarationKeyPath(getState(), next.declarationID, next.ruleID)
       : null;
 
     return dispatch({
@@ -251,8 +251,8 @@ actions.updateDeclaration = function(updateQueue, declarationID, key, value) {
     const nextQueue = updateQueue.then(
       () => {
         const {styleSheet, rule, declaration} =
-          selectors.getDeclarationHeirarchy(getState(), declarationID);
-        const styleSheetIndex = selectors.getStyleSheetIndex(getState(), styleSheet);
+          $.declarationHeirarchy(getState(), declarationID);
+        const styleSheetIndex = $.styleSheetIndex(getState(), styleSheet);
 
         // Update the rules.
         const offset = declaration.get("offsets").get(key);

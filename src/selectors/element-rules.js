@@ -4,50 +4,50 @@ const {List} = require("immutable");
 // Define the selectors as $ for convenience.
 const $ = module.exports;
 
-$.getStyleSheets = function(state) {
+$.styleSheets = function(state) {
   return state.elementRules.get("styleSheets");
 };
 
-$.getStyleSheetIndex = function(state, styleSheet) {
-  return $.getStyleSheets(state).indexOf(styleSheet);
+$.styleSheetIndex = function(state, styleSheet) {
+  return $.styleSheets(state).indexOf(styleSheet);
 };
 
-$.getAllRules = function(state) {
+$.allRules = function(state) {
   return List(
-    $.getStyleSheets(state)
+    $.styleSheets(state)
       .map(styleSheet => styleSheet.get("rules"))
       .reduce((a, b) => ([...a, ...b]), [])
   );
 };
 
-$.getMatchedRuleIDs = function(state) {
+$.matchedRuleIDs = function(state) {
   return state.elementRules.get("matchedRuleIDs");
 };
 
-$.getMatchedRules = function(state) {
-  return $.getMatchedRuleIDs(state).map(id => $.getRule(state, id));
+$.matchedRules = function(state) {
+  return $.matchedRuleIDs(state).map(id => $.rule(state, id));
 };
 
-$.getStyleSheet = function(state, styleSheetID) {
+$.styleSheet = function(state, styleSheetID) {
   // Bail out early if no styleSheet is being requested
   if (!styleSheetID) {
     return null;
   }
 
-  return $.getStyleSheets(state).find(idMatcher(styleSheetID));
+  return $.styleSheets(state).find(idMatcher(styleSheetID));
 };
 
-$.getRule = function(state, ruleID, styleSheetID) {
+$.rule = function(state, ruleID, styleSheetID) {
   // Bail out early if no rule is being requested
   if (!ruleID) {
     return null;
   }
 
   if (ruleID && styleSheetID) {
-    const styleSheet = $.getStyleSheet(state, styleSheetID);
+    const styleSheet = $.styleSheet(state, styleSheetID);
     return styleSheet.get("rules").find(idMatcher(ruleID));
   }
-  for (let styleSheet of $.getStyleSheets(state)) {
+  for (let styleSheet of $.styleSheets(state)) {
     const rule = styleSheet.get("rules").find(idMatcher(ruleID));
     if (rule) {
       return rule;
@@ -55,24 +55,24 @@ $.getRule = function(state, ruleID, styleSheetID) {
   }
 };
 
-$.getDeclaration = function(state, declarationID, ruleID, styleSheetID) {
+$.declaration = function(state, declarationID, ruleID, styleSheetID) {
   // Bail out early if no declaration is being requested
   if (!declarationID) {
     return null;
   }
-  return state.elementRules.getIn($.getDeclarationKeyPath.apply(this, arguments));
+  return state.elementRules.getIn($.declarationKeyPath.apply(this, arguments));
 };
 
-$.getIsEditingName = function(state) {
+$.isEditingName = function(state) {
   return state.elementRules.get("isEditingName");
 };
 
-$.getIsEditingValue = function(state) {
+$.isEditingValue = function(state) {
   return state.elementRules.get("isEditingValue");
 };
 
-$.getDeclarationHeirarchy = function(state, declarationID) {
-  for (let styleSheet of $.getStyleSheets(state)) {
+$.declarationHeirarchy = function(state, declarationID) {
+  for (let styleSheet of $.styleSheets(state)) {
     for (let rule of styleSheet.get("rules")) {
       for (let declaration of rule.get("declarations")) {
         if (declaration.get("id") === declarationID) {
@@ -83,37 +83,37 @@ $.getDeclarationHeirarchy = function(state, declarationID) {
   }
 };
 
-$.getEditingDeclaration = function(state) {
-  const keyPath = $.getEditingDeclarationKeyPath(state);
+$.editingDeclaration = function(state) {
+  const keyPath = $.editingDeclarationKeyPath(state);
   return keyPath
     ? state.elementRules.getIn(keyPath)
     : null;
 };
 
-$.getEditingRule = function(state) {
-  const keyPath = $.getEditingDeclarationKeyPath(state);
+$.editingRule = function(state) {
+  const keyPath = $.editingDeclarationKeyPath(state);
   return keyPath
     ? state.elementRules.getIn(keyPath.slice(0, 4))
     : null;
 };
 
-$.getEditingStyleSheet = function(state) {
-  const keyPath = $.getEditingDeclarationKeyPath(state);
+$.editingStyleSheet = function(state) {
+  const keyPath = $.editingDeclarationKeyPath(state);
   return keyPath
     ? state.elementRules.getIn(keyPath.slice(0, 2))
     : null;
 };
 
-$.getEditingDeclarationKeyPath = function(state) {
+$.editingDeclarationKeyPath = function(state) {
   return state.elementRules.get("editingDeclarationKeyPath");
 };
 
-$.getUpdateQueue = function(state) {
+$.updateQueue = function(state) {
   return state.elementRules.get("updateQueue");
 };
 
-$.findRuleBySelector = function(state, selector) {
-  return $.getAllRules(state).find(rule => rule.get("selector") === selector);
+$.ruleFromSelector = function(state, selector) {
+  return $.allRules(state).find(rule => rule.get("selector") === selector);
 };
 
 /**
@@ -142,7 +142,7 @@ function getKeyPathByIdOrSearch(keyPath, parent, keys) {
   }, null);
 }
 
-$.getDeclarationKeyPath = function(state, declarationID, ruleID, styleSheetID) {
+$.declarationKeyPath = function(state, declarationID, ruleID, styleSheetID) {
   const keys = [
     "styleSheets", styleSheetID,
     "rules", ruleID,

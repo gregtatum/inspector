@@ -22,7 +22,7 @@ test("actions.addStyleSheet", t => {
   store.dispatch(actions.addStyleSheet(mockCssStyleSheet1));
   store.dispatch(actions.addStyleSheet(mockCssStyleSheet2));
 
-  const styleSheets = $.getStyleSheets(store.getState());
+  const styleSheets = $.styleSheets(store.getState());
 
   t.equal(styleSheets.size, 2, "Found 2 stylesheets");
   t.equal(styleSheets.getIn([0, "text"]), styleSheetText1,
@@ -36,7 +36,7 @@ test("actions.setFocusedElement", t => {
   const store = twoStyleSheetsStore();
   store.dispatch(actions.setFocusedElement(mockElement));
 
-  const rules = $.getMatchedRules(store.getState());
+  const rules = $.matchedRules(store.getState());
   const selectorNames = rules.map(rule => rule.get("selector")).toJS();
 
   t.assert(selectorNames.includes(matchedSelector1), "First selector was matched.");
@@ -53,70 +53,70 @@ test("actions.editDeclarationName/editDeclarationValue/stopEditingDeclaration", 
   store.dispatch(actions.setFocusedElement(mockElement));
   state = store.getState();
 
-  const declarationID = $.getMatchedRules(state)
+  const declarationID = $.matchedRules(state)
     .getIn([0, "declarations", 0, "id"]);
 
   const {
     styleSheet,
     rule,
     declaration
-  } = $.getDeclarationHeirarchy(state, declarationID);
+  } = $.declarationHeirarchy(state, declarationID);
 
   // The initial state is not being edited.
-  t.equal($.getIsEditingName(state), false,
+  t.equal($.isEditingName(state), false,
     "The name is not being editing");
-  t.equal($.getIsEditingValue(state), false,
+  t.equal($.isEditingValue(state), false,
     "The value is not being editing");
-  t.is($.getEditingDeclaration(state), null,
+  t.is($.editingDeclaration(state), null,
     "No declaration is being editing");
-  t.is($.getEditingRule(state), null,
+  t.is($.editingRule(state), null,
     "No rule is being editing");
-  t.is($.getEditingStyleSheet(state), null,
+  t.is($.editingStyleSheet(state), null,
     "No styleSheet is being editing");
 
   store.dispatch(actions.editDeclarationName(rule, declaration));
   state = store.getState();
 
   // Now edit the name.
-  t.equal($.getIsEditingName(state), true,
+  t.equal($.isEditingName(state), true,
     "The name is not being editing");
-  t.equal($.getIsEditingValue(state), false,
+  t.equal($.isEditingValue(state), false,
     "The value is not being editing");
-  t.is($.getEditingDeclaration(state), declaration,
+  t.is($.editingDeclaration(state), declaration,
     "No declaration is being editing");
-  t.is($.getEditingRule(state), rule,
+  t.is($.editingRule(state), rule,
     "No rule is being editing");
-  t.is($.getEditingStyleSheet(state), styleSheet,
+  t.is($.editingStyleSheet(state), styleSheet,
     "No styleSheet is being editing");
 
   store.dispatch(actions.editDeclarationValue(rule, declaration));
   state = store.getState();
 
   // Now edit the value.
-  t.equal($.getIsEditingName(state), false,
+  t.equal($.isEditingName(state), false,
     "The name is not being editing");
-  t.equal($.getIsEditingValue(state), true,
+  t.equal($.isEditingValue(state), true,
     "The value is not being editing");
-  t.is($.getEditingDeclaration(state), declaration,
+  t.is($.editingDeclaration(state), declaration,
     "No declaration is being editing");
-  t.is($.getEditingRule(state), rule,
+  t.is($.editingRule(state), rule,
     "No rule is being editing");
-  t.is($.getEditingStyleSheet(state), styleSheet,
+  t.is($.editingStyleSheet(state), styleSheet,
     "No styleSheet is being editing");
 
   store.dispatch(actions.stopEditingDeclaration());
   state = store.getState();
 
   // Back to not editing anything.
-  t.equal($.getIsEditingName(state), false,
+  t.equal($.isEditingName(state), false,
     "The name is not being editing");
-  t.equal($.getIsEditingValue(state), false,
+  t.equal($.isEditingValue(state), false,
     "The value is not being editing");
-  t.is($.getEditingDeclaration(state), null,
+  t.is($.editingDeclaration(state), null,
     "No declaration is being editing");
-  t.is($.getEditingRule(state), null,
+  t.is($.editingRule(state), null,
     "No rule is being editing");
-  t.is($.getEditingStyleSheet(state), null,
+  t.is($.editingStyleSheet(state), null,
     "No styleSheet is being editing");
   t.end();
 });
@@ -128,10 +128,10 @@ test("actions.setDeclarationName - basic rewriting", tt => {
   let originalID, originalRule, originalDeclaration, originalStyleSheet;
 
   tt.test(" - The declaration is in an initial state.", t => {
-    originalRule = $.findRuleBySelector(store.getState(), ".page-container > *");
+    originalRule = $.ruleFromSelector(store.getState(), ".page-container > *");
     originalDeclaration = originalRule.getIn(["declarations", 1]);
     originalID = originalDeclaration.get("id");
-    originalStyleSheet = $.getStyleSheets(store.getState()).get(0);
+    originalStyleSheet = $.styleSheets(store.getState()).get(0);
 
     assertDeclaration(t, originalDeclaration, originalID, "width", "50px",
       "The declaration starts out with the correct initial values.");
@@ -145,16 +145,16 @@ test("actions.setDeclarationName - basic rewriting", tt => {
   });
 
   tt.test(" - Update a declaration value.", co.wrap(function*(t) {
-    let updateQueue = $.getUpdateQueue(store.getState());
+    let updateQueue = $.updateQueue(store.getState());
     store.dispatch(actions.setDeclarationValue(updateQueue, originalID, "1000em"));
 
     // Wait for this update queue to be processed
-    yield $.getUpdateQueue(store.getState());
+    yield $.updateQueue(store.getState());
 
-    const pageContainerRule = $.findRuleBySelector(
+    const pageContainerRule = $.ruleFromSelector(
       store.getState(), ".page-container > *");
     const widthDeclaration = pageContainerRule.getIn(["declarations", 1]);
-    const styleSheet = $.getStyleSheets(store.getState()).get(0);
+    const styleSheet = $.styleSheets(store.getState()).get(0);
     const text = styleSheetText1.replace("width: 50px;", "width: 1000em;");
 
     assertDeclaration(t, widthDeclaration, originalID, "width", "1000em",

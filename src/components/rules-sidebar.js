@@ -32,6 +32,6 @@ const RulesSidebar = createClass({
 
 module.exports = connect(
   (state, props) => ({
-    rules: $.getMatchedRules(state)
+    rules: $.matchedRules(state)
   })
 )(RulesSidebar);
