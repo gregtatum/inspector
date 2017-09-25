@@ -7,22 +7,16 @@ function mockCssStyleSheet(text) {
 }
 
 // Helper to assert a declaration looks like we want.
-function assertDeclaration(t, declaration, id, name, value, preamble) {
-  t.equal(
-    declaration.get('id'),
-    id,
-    `${preamble} The id matches the initial id.`
-  );
-  t.equal(
-    declaration.get('name'),
-    name,
-    `${preamble} The name matches "${name}".`
-  );
-  t.equal(
-    declaration.get('value'),
-    value,
-    `${preamble} The value matches "${value}".`
-  );
+function assertDeclaration(declaration, id, name, value, preamble) {
+  it(`${preamble} The id matches the initial id.`, function() {
+    expect(declaration.get('id')).toEqual(id);
+  });
+  it(`${preamble} The name matches "${name}".`, function() {
+    expect(declaration.get('name')).toEqual(name);
+  });
+  it(`${preamble} The value matches "${value}".`, function() {
+    expect(declaration.get('value')).toEqual(value);
+  });
 }
 
 module.exports = { mockCssStyleSheet, assertDeclaration };

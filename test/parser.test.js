@@ -11,27 +11,29 @@ const {
   // parseMediaQueryCondition,
 } = require('../src/parser/');
 
-describe('parseSingleRule', () => {
+describe('parseSingleRule one line', () => {
   const text = '.red-box { margin-top: 0px; }';
   const lexer = getCSSLexer(text);
   const token = lexer.nextToken();
   const rule = parseSingleRule(token, lexer);
 
-  ruleMatches(rule, {
-    selector: '.red-box',
-    whitespaceAfterSelector: ' ',
-    whitespaceBeforeSelector: '',
-    declarations: [
-      {
-        text: 'margin-top: 0px;',
-        name: 'margin-top',
-        value: '0px',
-      },
-    ],
+  it('has a correctly matching rule', function() {
+    expectRulesMatch(rule, {
+      selector: '.red-box',
+      whitespaceAfterSelector: ' ',
+      whitespaceBeforeSelector: '',
+      declarations: [
+        {
+          text: 'margin-top: 0px;',
+          name: 'margin-top',
+          value: '0px',
+        },
+      ],
+    });
   });
 });
 
-describe('parseSingleRule', () => {
+describe('parseSingleRule multiple lines', () => {
   const text = `
     .red-box {
       margin-top: 0px;
@@ -41,17 +43,19 @@ describe('parseSingleRule', () => {
   const token = lexer.nextToken();
   const rule = parseSingleRule(token, lexer);
 
-  ruleMatches(rule, {
-    selector: '.red-box',
-    whitespaceAfterSelector: ' ',
-    whitespaceBeforeSelector: '\n    ',
-    declarations: [
-      {
-        text: 'margin-top: 0px;',
-        name: 'margin-top',
-        value: '0px',
-      },
-    ],
+  it('has a correctly matching rule', function() {
+    expectRulesMatch(rule, {
+      selector: '.red-box',
+      whitespaceAfterSelector: ' ',
+      whitespaceBeforeSelector: '\n    ',
+      declarations: [
+        {
+          text: 'margin-top: 0px;',
+          name: 'margin-top',
+          value: '0px',
+        },
+      ],
+    });
   });
 });
 
@@ -61,14 +65,16 @@ describe("parseSingleDeclaration - 'margin:;'", () => {
   const { token, whitespaceToken } = skipWhitespace(lexer);
   const { declaration } = parseSingleDeclaration(token, whitespaceToken, lexer);
 
-  declarationMatches(declaration, {
-    text: text.trim(),
-    name: 'margin',
-    value: '',
-    whitespaceBeforeName: '',
-    whitespaceAfterName: '',
-    whitespaceBeforeValue: '',
-    whitespaceAfterValue: '',
+  it('has a correctly matching declaration', function() {
+    expectDeclarationsMatch(declaration, {
+      text: text.trim(),
+      name: 'margin',
+      value: '',
+      whitespaceBeforeName: '',
+      whitespaceAfterName: '',
+      whitespaceBeforeValue: '',
+      whitespaceAfterValue: '',
+    });
   });
 });
 
@@ -78,14 +84,16 @@ describe("parseSingleDeclaration - ' margin  :   ;    '", () => {
   const { token, whitespaceToken } = skipWhitespace(lexer);
   const { declaration } = parseSingleDeclaration(token, whitespaceToken, lexer);
 
-  declarationMatches(declaration, {
-    text: text.trim(),
-    name: 'margin',
-    value: '',
-    whitespaceBeforeName: ' ',
-    whitespaceAfterName: '  ',
-    whitespaceBeforeValue: '   ',
-    whitespaceAfterValue: '',
+  it('has a correctly matching declaration', function() {
+    expectDeclarationsMatch(declaration, {
+      text: text.trim(),
+      name: 'margin',
+      value: '',
+      whitespaceBeforeName: ' ',
+      whitespaceAfterName: '  ',
+      whitespaceBeforeValue: '   ',
+      whitespaceAfterValue: '',
+    });
   });
 });
 
@@ -95,14 +103,16 @@ describe("parseSingleDeclaration - 'margin:'", () => {
   const { token, whitespaceToken } = skipWhitespace(lexer);
   const { declaration } = parseSingleDeclaration(token, whitespaceToken, lexer);
 
-  declarationMatches(declaration, {
-    text: text.trim(),
-    name: 'margin',
-    value: '',
-    whitespaceBeforeName: '',
-    whitespaceAfterName: '',
-    whitespaceBeforeValue: '',
-    whitespaceAfterValue: '',
+  it('has a correctly matching declaration', function() {
+    expectDeclarationsMatch(declaration, {
+      text: text.trim(),
+      name: 'margin',
+      value: '',
+      whitespaceBeforeName: '',
+      whitespaceAfterName: '',
+      whitespaceBeforeValue: '',
+      whitespaceAfterValue: '',
+    });
   });
 });
 
@@ -112,14 +122,16 @@ describe("parseSingleDeclaration - 'margin:1em'", () => {
   const { token, whitespaceToken } = skipWhitespace(lexer);
   const { declaration } = parseSingleDeclaration(token, whitespaceToken, lexer);
 
-  declarationMatches(declaration, {
-    text: text.trim(),
-    name: 'margin',
-    value: '1em',
-    whitespaceBeforeName: '',
-    whitespaceAfterName: '',
-    whitespaceBeforeValue: '',
-    whitespaceAfterValue: '',
+  it('has a correctly matching declaration', function() {
+    expectDeclarationsMatch(declaration, {
+      text: text.trim(),
+      name: 'margin',
+      value: '1em',
+      whitespaceBeforeName: '',
+      whitespaceAfterName: '',
+      whitespaceBeforeValue: '',
+      whitespaceAfterValue: '',
+    });
   });
 });
 
@@ -129,14 +141,16 @@ describe("parseSingleDeclaration - 'margin:1em'", () => {
   const { token, whitespaceToken } = skipWhitespace(lexer);
   const { declaration } = parseSingleDeclaration(token, whitespaceToken, lexer);
 
-  declarationMatches(declaration, {
-    text: text.trim(),
-    name: 'margin',
-    value: '1em',
-    whitespaceBeforeName: '',
-    whitespaceAfterName: '',
-    whitespaceBeforeValue: '',
-    whitespaceAfterValue: '   ',
+  it('has a correctly matching declaration', function() {
+    expectDeclarationsMatch(declaration, {
+      text: text.trim(),
+      name: 'margin',
+      value: '1em',
+      whitespaceBeforeName: '',
+      whitespaceAfterName: '',
+      whitespaceBeforeValue: '',
+      whitespaceAfterValue: '   ',
+    });
   });
 });
 
@@ -146,7 +160,9 @@ describe("parseSingleDeclaration - 'margin:1em'", () => {
   const { token, whitespaceToken } = skipWhitespace(lexer);
   const { declaration } = parseSingleDeclaration(token, whitespaceToken, lexer);
 
-  expect(declaration).toBe(null);
+  it('does not parse a bad experession', function() {
+    expect(declaration).toBe(null);
+  });
 });
 
 describe("parseSingleDeclaration - 'margin:}'", () => {
@@ -155,14 +171,16 @@ describe("parseSingleDeclaration - 'margin:}'", () => {
   const { token, whitespaceToken } = skipWhitespace(lexer);
   const { declaration } = parseSingleDeclaration(token, whitespaceToken, lexer);
 
-  declarationMatches(declaration, {
-    text: 'margin:',
-    name: 'margin',
-    value: '',
-    whitespaceBeforeName: '',
-    whitespaceAfterName: '',
-    whitespaceBeforeValue: '',
-    whitespaceAfterValue: '',
+  it('has a correctly matching declaration', function() {
+    expectDeclarationsMatch(declaration, {
+      text: 'margin:',
+      name: 'margin',
+      value: '',
+      whitespaceBeforeName: '',
+      whitespaceAfterName: '',
+      whitespaceBeforeValue: '',
+      whitespaceAfterValue: '',
+    });
   });
 });
 
@@ -172,14 +190,16 @@ describe('parseSingleDeclaration - Value with spaces.', () => {
   const { token, whitespaceToken } = skipWhitespace(lexer);
   const { declaration } = parseSingleDeclaration(token, whitespaceToken, lexer);
 
-  declarationMatches(declaration, {
-    text: text.trim(),
-    name: 'margin-top',
-    value: '0px',
-    whitespaceBeforeName: ' ',
-    whitespaceAfterName: '  ',
-    whitespaceBeforeValue: '   ',
-    whitespaceAfterValue: '    ',
+  it('has a correctly matching declaration', function() {
+    expectDeclarationsMatch(declaration, {
+      text: text.trim(),
+      name: 'margin-top',
+      value: '0px',
+      whitespaceBeforeName: ' ',
+      whitespaceAfterName: '  ',
+      whitespaceBeforeValue: '   ',
+      whitespaceAfterValue: '    ',
+    });
   });
 });
 
@@ -189,14 +209,16 @@ describe('parseSingleDeclaration - " margin-top  :   0px    ;"', () => {
   const { token, whitespaceToken } = skipWhitespace(lexer);
   const { declaration } = parseSingleDeclaration(token, whitespaceToken, lexer);
 
-  declarationMatches(declaration, {
-    text: text.trim(),
-    name: 'margin-top',
-    value: '0px',
-    whitespaceBeforeName: ' ',
-    whitespaceAfterName: '  ',
-    whitespaceBeforeValue: '   ',
-    whitespaceAfterValue: '    ',
+  it('has a correctly matching declaration', function() {
+    expectDeclarationsMatch(declaration, {
+      text: text.trim(),
+      name: 'margin-top',
+      value: '0px',
+      whitespaceBeforeName: ' ',
+      whitespaceAfterName: '  ',
+      whitespaceBeforeValue: '   ',
+      whitespaceAfterValue: '    ',
+    });
   });
 });
 
@@ -206,14 +228,16 @@ describe('parseSingleDeclaration - "margin:0px 1em"', () => {
   const { token, whitespaceToken } = skipWhitespace(lexer);
   const { declaration } = parseSingleDeclaration(token, whitespaceToken, lexer);
 
-  declarationMatches(declaration, {
-    text: text.trim(),
-    name: 'margin',
-    value: '0px 1em',
-    whitespaceBeforeName: '',
-    whitespaceAfterName: '',
-    whitespaceBeforeValue: ' ',
-    whitespaceAfterValue: '',
+  it('has a correctly matching declaration', function() {
+    expectDeclarationsMatch(declaration, {
+      text: text.trim(),
+      name: 'margin',
+      value: '0px 1em',
+      whitespaceBeforeName: '',
+      whitespaceAfterName: '',
+      whitespaceBeforeValue: ' ',
+      whitespaceAfterValue: '',
+    });
   });
 });
 
@@ -223,14 +247,16 @@ describe('parseSingleDeclaration - "margin:0px 1em }"', () => {
   const { token, whitespaceToken } = skipWhitespace(lexer);
   const { declaration } = parseSingleDeclaration(token, whitespaceToken, lexer);
 
-  declarationMatches(declaration, {
-    text: 'margin: 0px 1em',
-    name: 'margin',
-    value: '0px 1em',
-    whitespaceBeforeName: '',
-    whitespaceAfterName: '',
-    whitespaceBeforeValue: ' ',
-    whitespaceAfterValue: '',
+  it('has a correctly matching declaration', function() {
+    expectDeclarationsMatch(declaration, {
+      text: 'margin: 0px 1em',
+      name: 'margin',
+      value: '0px 1em',
+      whitespaceBeforeName: '',
+      whitespaceAfterName: '',
+      whitespaceBeforeValue: ' ',
+      whitespaceAfterValue: '',
+    });
   });
 });
 
@@ -239,7 +265,9 @@ describe('parseSingleDeclaration - Invalid value', () => {
   const { token, whitespaceToken } = skipWhitespace(lexer);
   const { declaration } = parseSingleDeclaration(token, whitespaceToken, lexer);
 
-  expect(declaration).toBe(null);
+  it('does not match on a bad value', function() {
+    expect(declaration).toBe(null);
+  });
 });
 
 describe('parseDeclarations', () => {
@@ -251,27 +279,31 @@ describe('parseDeclarations', () => {
   `)
   );
 
-  declarationMatches(declarations[0], {
-    text: 'margin: 100px;',
-    name: 'margin',
-    value: '100px',
+  it('matches the first declaration', function() {
+    expectDeclarationsMatch(declarations[0], {
+      text: 'margin: 100px;',
+      name: 'margin',
+      value: '100px',
+    });
   });
-
-  declarationMatches(declarations[1], {
-    text:
-      'background-image: url(https://i.ytimg.com/vi/dQw4w9WgXcQ/maxresdefault.jpg);',
-    name: 'background-image',
-    value: 'url(https://i.ytimg.com/vi/dQw4w9WgXcQ/maxresdefault.jpg)',
+  it('matches the second declaration', function() {
+    expectDeclarationsMatch(declarations[1], {
+      text:
+        'background-image: url(https://i.ytimg.com/vi/dQw4w9WgXcQ/maxresdefault.jpg);',
+      name: 'background-image',
+      value: 'url(https://i.ytimg.com/vi/dQw4w9WgXcQ/maxresdefault.jpg)',
+    });
   });
-
-  declarationMatches(declarations[2], {
-    text: 'transform: translate(10px,100px), scale(0.9)',
-    name: 'transform',
-    value: 'translate(10px,100px), scale(0.9)',
+  it('matches the third declaration', function() {
+    expectDeclarationsMatch(declarations[2], {
+      text: 'transform: translate(10px,100px), scale(0.9)',
+      name: 'transform',
+      value: 'translate(10px,100px), scale(0.9)',
+    });
   });
 });
 
-function declarationMatches(declaration, obj) {
+function expectDeclarationsMatch(declaration, obj) {
   expect(true).toBeTruthy();
   expect(declaration.text).toBe(obj.text);
   expect(declaration.name).toBe(obj.name);
@@ -285,7 +317,7 @@ function declarationMatches(declaration, obj) {
   }
 }
 
-function ruleMatches(rule, obj) {
+function expectRulesMatch(rule, obj) {
   expect(true).toBeTruthy();
   expect(rule.selector).toBe(obj.selector);
 
@@ -298,7 +330,7 @@ function ruleMatches(rule, obj) {
     expect(rule.declarations.length).toBe(obj.declarations.length);
 
     obj.declarations.forEach((declaration, i) => {
-      declarationMatches(rule.declarations[i], declaration);
+      expectDeclarationsMatch(rule.declarations[i], declaration);
     });
   }
 }
