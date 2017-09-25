@@ -1,5 +1,5 @@
-const {DOM, createClass} = require("react");
-const {input} = DOM;
+const { DOM, createClass } = require('react');
+const { input } = DOM;
 
 // There is probably a better way to do this:
 const FONT_WIDTH_RATIO = 0.66;
@@ -16,7 +16,7 @@ const FONT_WIDTH_RATIO = 0.66;
  */
 
 const NavigatableInput = createClass({
-  displayName: "NavigatableInput",
+  displayName: 'NavigatableInput',
 
   componentDidMount() {
     this._input.focus();
@@ -25,44 +25,45 @@ const NavigatableInput = createClass({
   },
 
   setInputWidth() {
-    const {fontSize} = window.getComputedStyle(this._input);
+    const { fontSize } = window.getComputedStyle(this._input);
     const numberCharacters = this._input.value.length;
     const width = numberCharacters * parseInt(fontSize, 10) * FONT_WIDTH_RATIO;
-    this.setState({width});
+    this.setState({ width });
   },
 
   getInitialState() {
-    return {width: 0};
+    return { width: 0 };
   },
 
   handleKeyDown(event) {
     const {
       commitOn,
-      commands: {
-        editNext,
-        editPrevious,
-        stopEditing,
-      }
+      commands: { editNext, editPrevious, stopEditing },
     } = this.props;
 
     switch (event.key) {
-      case "Tab":
+      case 'Tab':
         event.preventDefault();
         this.commitAnyChanges();
-        event.shiftKey ? editPrevious() : editNext();
+        if (event.shiftKey) {
+          editPrevious();
+        } else {
+          editNext();
+        }
         break;
-      case "Enter":
+      case 'Enter':
         this.commitAnyChanges();
         editNext();
         break;
-      case ":":
-      case ";":
+      case ':':
+      case ';':
         // Don't allow these characters to get placed in the input.
         event.preventDefault();
         break;
-      case "Escape":
+      case 'Escape':
         stopEditing();
         break;
+      default:
     }
 
     if (commitOn === event.key) {
@@ -82,9 +83,7 @@ const NavigatableInput = createClass({
       className,
       defaultValue,
       valuesPasted,
-      commands: {
-        stopEditing
-      }
+      commands: { stopEditing },
     } = this.props;
 
     return input({
@@ -96,16 +95,16 @@ const NavigatableInput = createClass({
       onBlur: stopEditing,
       onKeyDown: this.handleKeyDown,
       onChange: this.setInputWidth,
-      style: {width: this.state.width},
-      onPaste: (e) => {
-        if ([...e.clipboardData.types].includes("text/plain")) {
-          valuesPasted(e.clipboardData.getData("text/plain"));
+      style: { width: this.state.width },
+      onPaste: e => {
+        if ([...e.clipboardData.types].includes('text/plain')) {
+          valuesPasted(e.clipboardData.getData('text/plain'));
           stopEditing();
           e.preventDefault();
         }
-      }
+      },
     });
-  }
+  },
 });
 
 module.exports = NavigatableInput;

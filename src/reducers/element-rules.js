@@ -1,5 +1,5 @@
-const {actions} = require("../constants");
-const {List, Map} = require("immutable");
+const { actions } = require('../constants');
+const { List, Map } = require('immutable');
 
 const handlers = {};
 
@@ -14,14 +14,14 @@ const DEFAULT_STATE = Map({
   editingDeclarationKeyPath: null,
   isEditingName: false,
   isEditingValue: false,
-  updateQueue: Promise.resolve()
+  updateQueue: Promise.resolve(),
 });
 
 handlers[actions.EDIT_DECLARATION_NAME] = function(state, action) {
   return state.merge({
     editingDeclarationKeyPath: action.keyPath,
     isEditingName: true,
-    isEditingValue: false
+    isEditingValue: false,
   });
 };
 
@@ -29,56 +29,56 @@ handlers[actions.EDIT_DECLARATION_VALUE] = function(state, action) {
   return state.merge({
     editingDeclarationKeyPath: action.keyPath,
     isEditingName: false,
-    isEditingValue: true
+    isEditingValue: true,
   });
 };
 
-handlers[actions.STOP_EDITING_DECLARATION] = function(state, action) {
+handlers[actions.STOP_EDITING_DECLARATION] = function(state) {
   return state.merge({
     editingDeclarationKeyPath: null,
     isEditingName: false,
-    isEditingValue: false
+    isEditingValue: false,
   });
 };
 
 handlers[actions.UPDATE_DECLARATION] = function(state, action) {
   // Set the new list of stylesheets.
-  const {styleSheetIndex, text, rules, cssStyleSheet} = action;
-  return state.mergeIn(
-    ["styleSheets", styleSheetIndex],
-    {text, rules, cssStyleSheet}
-  );
+  const { styleSheetIndex, text, rules, cssStyleSheet } = action;
+  return state.mergeIn(['styleSheets', styleSheetIndex], {
+    text,
+    rules,
+    cssStyleSheet,
+  });
 };
 
 handlers[actions.ADD_TO_UPDATE_QUEUE] = function(state, action) {
-  const {updateQueue} = action;
-  return state.merge({updateQueue});
+  const { updateQueue } = action;
+  return state.merge({ updateQueue });
 };
 
 handlers[actions.REPLACE_STYLESHEET_RULES] = function(state, action) {
   return state.setIn(
-    ["styleSheets", action.styleSheetIndex, "rules"],
+    ['styleSheets', action.styleSheetIndex, 'rules'],
     action.rules
   );
 };
 
 handlers[actions.ADD_STYLE_SHEET] = function(state, action) {
-  return state.updateIn(
-    ["styleSheets"],
-    styleSheets => styleSheets.push(action.styleSheet)
+  return state.updateIn(['styleSheets'], styleSheets =>
+    styleSheets.push(action.styleSheet)
   );
 };
 
 handlers[actions.SET_FOCUSED_ELEMENT] = function(state, action) {
-  const {element, matchedRuleIDs} = action;
-  return state.merge({element, matchedRuleIDs});
+  const { element, matchedRuleIDs } = action;
+  return state.merge({ element, matchedRuleIDs });
 };
 
 handlers[actions.TAB_THROUGH_DECLARATIONS] = function(state, action) {
   return state.merge({
     isEditingName: action.isEditingName,
     isEditingValue: action.isEditingValue,
-    editingDeclarationKeyPath: action.keyPath
+    editingDeclarationKeyPath: action.keyPath,
   });
 };
 

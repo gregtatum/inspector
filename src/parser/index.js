@@ -1,7 +1,7 @@
 /* Assignment in a while condition makes token parsing easier. */
 /* eslint-disable no-cond-assign */
 
-const {getCSSLexer} = require("./css-lexer");
+const { getCSSLexer } = require('./css-lexer');
 
 const {
   skipWhitespace,
@@ -12,13 +12,13 @@ const {
   normalizeTokenText,
   isDeclarationClose,
   determineIndentionStrategy,
-} = require("./parsing-utils");
+} = require('./parsing-utils');
 
 const {
   createMediaQueryRule,
   createRule,
-  createDeclaration
-} = require("./css-structs");
+  createDeclaration,
+} = require('./css-structs');
 
 /**
  * This file collects all of the functions that parse a stylesheet's text into a
@@ -33,14 +33,14 @@ function parseRules(lexer) {
   const rules = [];
 
   while (true) {
-    const {token} = skipWhitespace(lexer);
+    const { token } = skipWhitespace(lexer);
     if (!token) {
       break;
     }
 
     // This is a media query
-    if (token.tokenType === "at") {
-      if (token.text == "media") {
+    if (token.tokenType === 'at') {
+      if (token.text === 'media') {
         rules.push(parseMediaQuery(token, lexer));
       } else {
         // Skip until the next semi-colon for cases like `@charset "UTF-8";`
@@ -50,14 +50,16 @@ function parseRules(lexer) {
     }
 
     // End of a media query, bail out on this loop.
-    if (token.tokenType === "symbol" && token.text === "}") {
+    if (token.tokenType === 'symbol' && token.text === '}') {
       break;
     }
 
     // A new rule was found
-    if (token.tokenType === "ident" ||
-        token.tokenType === "id" ||
-        token.tokenType === "symbol") {
+    if (
+      token.tokenType === 'ident' ||
+      token.tokenType === 'id' ||
+      token.tokenType === 'symbol'
+    ) {
       rules.push(parseSingleRule(token, lexer));
     }
   }
@@ -69,11 +71,11 @@ function parseSingleRule(token, lexer) {
   token = parseSelector(token, lexer, rule);
 
   // Bail out if the next token isn't "{".
-  if (!token || token.text !== "{") {
+  if (!token || token.text !== '{') {
     return token;
   }
 
-  const {declarations} = parseDeclarations(lexer);
+  const { declarations } = parseDeclarations(lexer);
   rule.declarations = declarations;
   rule.offsets.text[1] = token.endOffset;
   rule.indentation = determineIndentionStrategy(rule);
@@ -94,22 +96,23 @@ function parseSelector(token, lexer, rule) {
     if (!token) {
       break;
     }
-    const {tokenType, text, endOffset} = token;
+    const { tokenType, text, endOffset } = token;
 
-    if (tokenType === "symbol") {
-      if (text === "{") {
+    if (tokenType === 'symbol') {
+      if (text === '{') {
         rule.whitespace.afterSelector = getTokenText(lexer, whitespaceToken);
         break;
       }
     }
-    if (tokenType === "ident" || tokenType === "id" || tokenType === "symbol") {
-      const spacer = (
-          token.text === "," ||
-          token.text === ":" ||
-          previousToken.text === ":" ||
-          previousToken.text === "." ||
-          previousToken.tokenType === "whitespace"
-        ) ? "" : " ";
+    if (tokenType === 'ident' || tokenType === 'id' || tokenType === 'symbol') {
+      const spacer =
+        token.text === ',' ||
+        token.text === ':' ||
+        previousToken.text === ':' ||
+        previousToken.text === '.' ||
+        previousToken.tokenType === 'whitespace'
+          ? ''
+          : ' ';
       rule.selector = rule.selector + spacer + normalizeTokenText(token);
       rule.offsets.selector[1] = endOffset;
       if (firstRun) {
@@ -133,51 +136,51 @@ function parseDeclarations(lexer, previousToken) {
       token = results.token;
       whitespaceToken = results.whitespaceToken;
     }
-    if (!token || (token.text === "}" && token.tokenType === "symbol")) {
+    if (!token || (token.text === '}' && token.tokenType === 'symbol')) {
       break;
     }
-    if (token.tokenType === "ident") {
-      const {
-        declaration,
-        previousToken: prevToken
-      } = parseSingleDeclaration(token, whitespaceToken, lexer);
+    if (token.tokenType === 'ident') {
+      const { declaration, previousToken: prevToken } = parseSingleDeclaration(
+        token,
+        whitespaceToken,
+        lexer
+      );
 
       if (declaration) {
         declarations.push(declaration);
-      } else if (prevToken.text !== "}") {
+      } else if (prevToken.text !== '}') {
         // Uh oh, no declaration was found. This means there was probably a problem.
         findDeclarationClose(lexer);
       }
       // TODO, handle comments here
-    } else if (token.tokenType === "comment") {
+    } else if (token.tokenType === 'comment') {
       // TODO
     } else {
-      throw new Error("Unable to parse declarations");
+      throw new Error('Unable to parse declarations');
     }
   }
-  return {declarations, previousToken: token};
+  return { declarations, previousToken: token };
 }
 
 function parseSingleDeclaration(nameToken, whitespaceBeforeName, lexer) {
   // Create the declaration and set the name and basic info
   const declaration = createDeclaration();
 
-  let {
-    token: colon,
-    whitespaceToken: whitespaceAfterName
-  } = skipWhitespace(lexer);
+  const { token: colon, whitespaceToken: whitespaceAfterName } = skipWhitespace(
+    lexer
+  );
 
   // Double check that the colon is correct
-  if (colon.tokenType !== "symbol" || colon.text !== ":") {
+  if (colon.tokenType !== 'symbol' || colon.text !== ':') {
     return {
       declaration: null,
-      previousToken: colon
+      previousToken: colon,
     };
   }
 
   const {
     token: valueStartToken,
-    whitespaceToken: whitespaceBeforeValue
+    whitespaceToken: whitespaceBeforeValue,
   } = skipWhitespace(lexer);
 
   let valueEndToken, valueEndPreviousToken, whitespaceAfterValue;
@@ -220,10 +223,12 @@ function parseSingleDeclaration(nameToken, whitespaceBeforeName, lexer) {
   // Only capture the ending whitespace if there is a semicolon at the end.
   {
     // Case: "margin: 0em 1em }"}
-    const endsInCurly = valueEndToken && valueEndToken.text === "}";
+    const endsInCurly = valueEndToken && valueEndToken.text === '}';
     // Case: "margin: 0em 1em"}
-    const noSemicolon = !valueEndToken && valueEndPreviousToken
-                        && valueEndPreviousToken.text !== ";";
+    const noSemicolon =
+      !valueEndToken &&
+      valueEndPreviousToken &&
+      valueEndPreviousToken.text !== ';';
     if (endsInCurly || noSemicolon) {
       whitespaceAfterValue = null;
     }
@@ -231,10 +236,10 @@ function parseSingleDeclaration(nameToken, whitespaceBeforeName, lexer) {
 
   // Figure out the end of the declaration, includes the semi-colon if it's there.
   let textEndOffset;
-  if (valueEndToken && valueEndToken.text !== "}") {
+  if (valueEndToken && valueEndToken.text !== '}') {
     // Handles the case of "margin:1em;"
     textEndOffset = valueEndToken.endOffset;
-  } else if (valueStartToken && valueStartToken.text === ";") {
+  } else if (valueStartToken && valueStartToken.text === ';') {
     // Handles the case of "margin:;"
     textEndOffset = valueStartToken.endOffset;
   } else {
@@ -252,12 +257,15 @@ function parseSingleDeclaration(nameToken, whitespaceBeforeName, lexer) {
 
   declaration.whitespace.beforeName = getTokenText(lexer, whitespaceBeforeName);
   declaration.whitespace.afterName = getTokenText(lexer, whitespaceAfterName);
-  declaration.whitespace.beforeValue = getTokenText(lexer, whitespaceBeforeValue);
+  declaration.whitespace.beforeValue = getTokenText(
+    lexer,
+    whitespaceBeforeValue
+  );
   declaration.whitespace.afterValue = getTokenText(lexer, whitespaceAfterValue);
 
   const lastToken = valueEndToken || valueStartToken || colon;
 
-  return {declaration, previousToken: lastToken};
+  return { declaration, previousToken: lastToken };
 }
 
 function parseMediaQuery(token, lexer) {
@@ -268,23 +276,28 @@ function parseMediaQuery(token, lexer) {
 }
 
 function parseMediaQueryCondition(token, lexer) {
-  let condition = "@media";
+  let condition = '@media';
   let previousToken = token;
-  while (token = skipWhitespace(lexer)) {
-    const {tokenType, text} = token;
+  while ((token = skipWhitespace(lexer))) {
+    const { tokenType, text } = token;
 
-    if (tokenType === "symbol") {
-      if (text === "{") {
+    if (tokenType === 'symbol') {
+      if (text === '{') {
         break;
       }
     }
-    if (tokenType === "ident" || tokenType === "symbol" || tokenType === "dimension") {
-      const spacer = (
-        token.text === "," ||
-        token.text === ":" ||
-        token.text === ")" ||
-        previousToken.text === "("
-      ) ? "" : " ";
+    if (
+      tokenType === 'ident' ||
+      tokenType === 'symbol' ||
+      tokenType === 'dimension'
+    ) {
+      const spacer =
+        token.text === ',' ||
+        token.text === ':' ||
+        token.text === ')' ||
+        previousToken.text === '('
+          ? ''
+          : ' ';
       condition += spacer + normalizeTokenText(token);
     }
     previousToken = token;

@@ -1,13 +1,14 @@
-const {
-  normalizeTokenText,
-  getSelectorOffset
-} = require("./parsing-utils");
+// @flow
+import type { MediaQueryRule, Rule, Declaration } from '../types/css';
+import type { Token } from '../types/parsing';
+
+const { normalizeTokenText, getSelectorOffset } = require('./parsing-utils');
 
 const {
   getMediaQueryRuleID,
   getRuleID,
   getDeclarationID,
-} = require("../utils/ids");
+} = require('../utils/ids');
 
 /**
  * This file contains a list of objects that contain information that are relevant to
@@ -16,16 +17,7 @@ const {
  * https://developer.mozilla.org/en-US/docs/Web/API/CSS_Object_Model
  */
 
-/**
- * Holds a information about a CSSMediaRule.
- * https://developer.mozilla.org/en-US/docs/Web/API/CSSMediaRule
- *
- * @property {string}  id               - A unique id that increments from 0.
- * @property {string}  condition - The text of the condition of the rule.
- *                                   e.g. "@media screen and (min-width: 1200px)"
- * @property {array}   rules     - The rules that make up the media query.
- */
-function createMediaQueryRule() {
+function createMediaQueryRule(): MediaQueryRule {
   return {
     id: getMediaQueryRuleID(),
     condition: null,
@@ -33,22 +25,7 @@ function createMediaQueryRule() {
   };
 }
 
-/**
- * Rule holds information about a CSSStyleRule.
- * https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleRule
- *
- * @property {string} id               - A unique id that increments from 0.
- * @property {string} selector         - The selector text for the rule
- *                                         e.g. "ul > li" or "#my-button.selected"
- * @property {object} offsets          - The text offsets of the stylesheet's entire
- *                                         text source.
- * @property {array}  offsets.selector - [begin, end] of the selector text.
- * @property {array}  offsets.text     - [begin, end] of the entire rule text, from the
- *                                         selector to the closing "}".
- * @property {array}  declarations     - The name/value style Declarations objects that
- *                                         make up the rule.
- */
-function createRule(token) {
+function createRule(token: Token): Rule {
   return {
     // A unique ID
     id: getRuleID(),
@@ -63,9 +40,9 @@ function createRule(token) {
     // Array of declaration objects.
     declarations: null,
     whitespace: {
-      beforeSelector: "",
-      afterSelector: "",
-    }
+      beforeSelector: '',
+      afterSelector: '',
+    },
   };
 }
 
@@ -84,11 +61,11 @@ function createRule(token) {
  * @property {array}  offsets.name  - [begin, end] of the entire name portion
  * @property {array}  offsets.value - [begin, end] of the entire value portion
  */
-function createDeclaration() {
+function createDeclaration(): Declaration {
   return {
     id: getDeclarationID(),
-    name: "",
-    value: "",
+    name: '',
+    value: '',
     // priority: "",
     // terminator: "",
     // enabled: true,
@@ -96,19 +73,19 @@ function createDeclaration() {
       // comment: null,
       text: [0, 0],
       name: [0, 0],
-      value: [0, 0]
+      value: [0, 0],
     },
     whitespace: {
-      beforeName: "",
-      afterName: "",
-      beforeValue: "",
-      afterValue: ""
-    }
+      beforeName: '',
+      afterName: '',
+      beforeValue: '',
+      afterValue: '',
+    },
   };
 }
 
 module.exports = {
   createMediaQueryRule,
   createRule,
-  createDeclaration
+  createDeclaration,
 };

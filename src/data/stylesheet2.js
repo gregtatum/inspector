@@ -1,5 +1,4 @@
-module.exports =
-`body > margin {
+module.exports = `body > margin {
   margin:0;
   font-family: 'Roboto', serif;
   font-size: 14px;

@@ -1,7 +1,7 @@
-const Redux = require("redux");
-const {default: thunkMiddleware} = require("redux-thunk");
-const loggerMiddleware = require("redux-logger")({logErrors: false});
-const reducers = require("./reducers");
+const Redux = require('redux');
+const { default: thunkMiddleware } = require('redux-thunk');
+const loggerMiddleware = require('redux-logger')({ logErrors: false });
+const reducers = require('./reducers');
 
 module.exports = function getStore(options = {}) {
   const middleware = [thunkMiddleware];
@@ -10,8 +10,5 @@ module.exports = function getStore(options = {}) {
     middleware.push(loggerMiddleware);
   }
 
-  return Redux.createStore(
-    reducers,
-    Redux.applyMiddleware(...middleware)
-  );
+  return Redux.createStore(reducers, Redux.applyMiddleware(...middleware));
 };

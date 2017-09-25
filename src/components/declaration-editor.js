@@ -1,13 +1,13 @@
-const {DOM, createClass, createFactory} = require("react");
-const {span} = DOM;
-const NavigatableInput = createFactory(require("./navigatable-input"));
+const { DOM, createClass, createFactory } = require('react');
+const { span } = DOM;
+const NavigatableInput = createFactory(require('./navigatable-input'));
 
 const DeclarationEditor = createClass({
-  displayName: "DeclarationEditor",
+  displayName: 'DeclarationEditor',
 
   getInitialState() {
     return {
-      wasEditing: false
+      wasEditing: false,
     };
   },
 
@@ -20,7 +20,7 @@ const DeclarationEditor = createClass({
       className,
       commitOn,
       commands,
-      valuesPasted
+      valuesPasted,
     } = this.props;
 
     if (isEditing) {
@@ -29,23 +29,24 @@ const DeclarationEditor = createClass({
         defaultValue: value,
         commitOn,
         commands,
-        valuesPasted
+        valuesPasted,
       });
     }
-    return span({
-      className: `rule-declaration-editor rule-declaration-editor-button ${className}`,
-      onClick: () => commands.beginEdit(rule, declaration),
-      role: "button",
-      tabIndex: 0,
-      onKeyPress: (e) => {
-        if (e.key === "Enter") {
-          commands.beginEdit(rule, declaration);
-        }
-      }
-    },
+    return span(
+      {
+        className: `rule-declaration-editor rule-declaration-editor-button ${className}`,
+        onClick: () => commands.beginEdit(rule, declaration),
+        role: 'button',
+        tabIndex: 0,
+        onKeyPress: e => {
+          if (e.key === 'Enter') {
+            commands.beginEdit(rule, declaration);
+          }
+        },
+      },
       value
     );
-  }
+  },
 });
 
 module.exports = DeclarationEditor;

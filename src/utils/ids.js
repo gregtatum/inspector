@@ -5,10 +5,10 @@ let declarationID = 0;
 let revisionID = 0;
 
 module.exports = {
-  getMediaQueryRuleID: () => "media-query-rule-" + mediaQueryRuleID++,
-  getRuleID: () => "rule-" + ruleID++,
-  getDeclarationID: () => "declaration-" + declarationID++,
-  getStyleSheetID: () => "stylesheet-" + styleSheetID++,
-  getRevisionID: () => "revision-" + revisionID++,
-  idMatcher: (id) => item => item.get("id") === id
+  getMediaQueryRuleID: () => 'media-query-rule-' + mediaQueryRuleID++,
+  getRuleID: () => 'rule-' + ruleID++,
+  getDeclarationID: () => 'declaration-' + declarationID++,
+  getStyleSheetID: () => 'stylesheet-' + styleSheetID++,
+  getRevisionID: () => 'revision-' + revisionID++,
+  idMatcher: id => item => item.get('id') === id,
 };

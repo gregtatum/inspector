@@ -1,27 +1,22 @@
-const {DOM, createClass, createFactory} = require("react");
-const {connect} = require("react-redux");
+const { DOM, createClass, createFactory } = require('react');
+const { connect } = require('react-redux');
 
-const RulesSidebar = createFactory(require("./rules-sidebar"));
-const Page = createFactory(require("./page"));
+const RulesSidebar = createFactory(require('./rules-sidebar'));
+const Page = createFactory(require('./page'));
 
-const {
-  addPageStyleSheet,
-} = require("../actions/element-rules");
+const { addPageStyleSheet } = require('../actions/element-rules');
 
 const Inspector = createClass({
-  displayName: "Inspector",
+  displayName: 'Inspector',
 
   componentWillMount() {
-    const {dispatch} = this.props;
+    const { dispatch } = this.props;
     dispatch(addPageStyleSheet());
   },
 
   render() {
-    return DOM.div({},
-      Page(),
-      RulesSidebar()
-    );
-  }
+    return DOM.div({}, Page(), RulesSidebar());
+  },
 });
 
 function mapStateToProps(state) {

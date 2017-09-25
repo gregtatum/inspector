@@ -1,11 +1,11 @@
-const {idMatcher} = require("../utils/ids");
-const {List} = require("immutable");
+const { idMatcher } = require('../utils/ids');
+const { List } = require('immutable');
 
 // Define the selectors as $ for convenience.
 const $ = module.exports;
 
 $.styleSheets = function(state) {
-  return state.elementRules.get("styleSheets");
+  return state.elementRules.get('styleSheets');
 };
 
 $.styleSheetIndex = function(state, styleSheet) {
@@ -15,13 +15,13 @@ $.styleSheetIndex = function(state, styleSheet) {
 $.allRules = function(state) {
   return List(
     $.styleSheets(state)
-      .map(styleSheet => styleSheet.get("rules"))
-      .reduce((a, b) => ([...a, ...b]), [])
+      .map(styleSheet => styleSheet.get('rules'))
+      .reduce((a, b) => [...a, ...b], [])
   );
 };
 
 $.matchedRuleIDs = function(state) {
-  return state.elementRules.get("matchedRuleIDs");
+  return state.elementRules.get('matchedRuleIDs');
 };
 
 $.matchedRules = function(state) {
@@ -45,17 +45,18 @@ $.rule = function(state, ruleID, styleSheetID) {
 
   if (ruleID && styleSheetID) {
     const styleSheet = $.styleSheet(state, styleSheetID);
-    return styleSheet.get("rules").find(idMatcher(ruleID));
+    return styleSheet.get('rules').find(idMatcher(ruleID));
   }
-  for (let styleSheet of $.styleSheets(state)) {
-    const rule = styleSheet.get("rules").find(idMatcher(ruleID));
+  for (const styleSheet of $.styleSheets(state)) {
+    const rule = styleSheet.get('rules').find(idMatcher(ruleID));
     if (rule) {
       return rule;
     }
   }
+  return null;
 };
 
-$.declaration = function(state, declarationID, ruleID, styleSheetID) {
+$.declaration = function(state, declarationID) {
   // Bail out early if no declaration is being requested
   if (!declarationID) {
     return null;
@@ -64,56 +65,51 @@ $.declaration = function(state, declarationID, ruleID, styleSheetID) {
 };
 
 $.isEditingName = function(state) {
-  return state.elementRules.get("isEditingName");
+  return state.elementRules.get('isEditingName');
 };
 
 $.isEditingValue = function(state) {
-  return state.elementRules.get("isEditingValue");
+  return state.elementRules.get('isEditingValue');
 };
 
 $.declarationHeirarchy = function(state, declarationID) {
-  for (let styleSheet of $.styleSheets(state)) {
-    for (let rule of styleSheet.get("rules")) {
-      for (let declaration of rule.get("declarations")) {
-        if (declaration.get("id") === declarationID) {
-          return {styleSheet, rule, declaration};
+  for (const styleSheet of $.styleSheets(state)) {
+    for (const rule of styleSheet.get('rules')) {
+      for (const declaration of rule.get('declarations')) {
+        if (declaration.get('id') === declarationID) {
+          return { styleSheet, rule, declaration };
         }
       }
     }
   }
+  throw new Error('Could not find declaration by that ID.');
 };
 
 $.editingDeclaration = function(state) {
   const keyPath = $.editingDeclarationKeyPath(state);
-  return keyPath
-    ? state.elementRules.getIn(keyPath)
-    : null;
+  return keyPath ? state.elementRules.getIn(keyPath) : null;
 };
 
 $.editingRule = function(state) {
   const keyPath = $.editingDeclarationKeyPath(state);
-  return keyPath
-    ? state.elementRules.getIn(keyPath.slice(0, 4))
-    : null;
+  return keyPath ? state.elementRules.getIn(keyPath.slice(0, 4)) : null;
 };
 
 $.editingStyleSheet = function(state) {
   const keyPath = $.editingDeclarationKeyPath(state);
-  return keyPath
-    ? state.elementRules.getIn(keyPath.slice(0, 2))
-    : null;
+  return keyPath ? state.elementRules.getIn(keyPath.slice(0, 2)) : null;
 };
 
 $.editingDeclarationKeyPath = function(state) {
-  return state.elementRules.get("editingDeclarationKeyPath");
+  return state.elementRules.get('editingDeclarationKeyPath');
 };
 
 $.updateQueue = function(state) {
-  return state.elementRules.get("updateQueue");
+  return state.elementRules.get('updateQueue');
 };
 
 $.ruleFromSelector = function(state, selector) {
-  return $.allRules(state).find(rule => rule.get("selector") === selector);
+  return $.allRules(state).find(rule => rule.get('selector') === selector);
 };
 
 /**
@@ -133,20 +129,29 @@ function getKeyPathByIdOrSearch(keyPath, parent, keys) {
       return null;
     }
     const child = children.get(index);
-    return getKeyPathByIdOrSearch(keyPath.concat([key, index]), child, nextKeys);
+    return getKeyPathByIdOrSearch(
+      keyPath.concat([key, index]),
+      child,
+      nextKeys
+    );
   }
 
   return children.reduce((result, child, index) => {
-    return result ||
-      getKeyPathByIdOrSearch(keyPath.concat([key, index]), child, nextKeys);
+    return (
+      result ||
+      getKeyPathByIdOrSearch(keyPath.concat([key, index]), child, nextKeys)
+    );
   }, null);
 }
 
 $.declarationKeyPath = function(state, declarationID, ruleID, styleSheetID) {
   const keys = [
-    "styleSheets", styleSheetID,
-    "rules", ruleID,
-    "declarations", declarationID
+    'styleSheets',
+    styleSheetID,
+    'rules',
+    ruleID,
+    'declarations',
+    declarationID,
   ];
 
   return List(getKeyPathByIdOrSearch([], state.elementRules, keys));

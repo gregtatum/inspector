@@ -1,7 +1,4 @@
-const {
-  DOM: {div},
-  createClass
-} = require("react");
+const { DOM: { div }, createClass } = require('react');
 
 function resolveIn(milliseconds) {
   return new Promise(resolve => setTimeout(resolve, milliseconds));
@@ -11,32 +8,36 @@ function defer(fn) {
   setTimeout(fn, 1);
 }
 
+/* eslint-disable no-invalid-this */
 function transitionIn(callback) {
   defer(() => {
     const {
-      animations: {promise},
+      animations: { promise },
       transitionAppearOffset,
       transitionName,
       transitionEnterTimeout,
     } = this.props;
 
     this.props.animations.promise = promise.then(() => {
-      this.setClassName(`${transitionName}-enter ${transitionName}-enter-active`);
+      this.setClassName(
+        `${transitionName}-enter ${transitionName}-enter-active`
+      );
       setTimeout(callback, transitionEnterTimeout);
       return resolveIn(transitionAppearOffset);
     });
   });
 }
+/* eslint-enable no-invalid-this */
 
 const OffsetTransitionItem = createClass({
-  displayName: "OffsetTransitionItem",
+  displayName: 'OffsetTransitionItem',
 
   getInitialState() {
-    return {className: `${this.props.transitionName}-enter`};
+    return { className: `${this.props.transitionName}-enter` };
   },
 
   setClassName(className) {
-    this.setState({className});
+    this.setState({ className });
   },
 
   componentWillAppear: transitionIn,
@@ -44,32 +45,31 @@ const OffsetTransitionItem = createClass({
   componentWillEnter: transitionIn,
 
   componentWillLeave(callback) {
-    const {
-      transitionName,
-      transitionLeaveTimeout,
-    } = this.props;
+    const { transitionName, transitionLeaveTimeout } = this.props;
 
     this.setClassName(`${transitionName}-leave`);
 
     defer(() => {
-      this.setClassName(`${transitionName}-leave ${transitionName}-leave-active`);
+      this.setClassName(
+        `${transitionName}-leave ${transitionName}-leave-active`
+      );
       setTimeout(callback, transitionLeaveTimeout);
     });
   },
 
   render() {
-    const {className} = this.state;
+    const { className } = this.state;
 
     return div(
       {
         className,
         ref: element => {
           this._div = element;
-        }
+        },
       },
       this.props.children
     );
-  }
+  },
 });
 
 module.exports = OffsetTransitionItem;

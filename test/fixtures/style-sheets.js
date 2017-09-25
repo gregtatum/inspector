@@ -1,4 +1,4 @@
-const {mockCssStyleSheet} = require("../utils");
+const { mockCssStyleSheet } = require('../utils');
 
 const styleSheetText1 = `
   .page-container {
@@ -40,5 +40,5 @@ module.exports = {
   styleSheetText1,
   styleSheetText2,
   mockCssStyleSheet1,
-  mockCssStyleSheet2
+  mockCssStyleSheet2,
 };

@@ -1,37 +1,36 @@
-const {DOM: {div}, createClass, createFactory} = require("react");
-const Rule = createFactory(require("./rule"));
-const OffsetTransitionGroup = createFactory(require("./offset-transition-group"));
-const {connect} = require("react-redux");
-const $ = require("../selectors");
+const { DOM: { div }, createClass, createFactory } = require('react');
+const Rule = createFactory(require('./rule'));
+const OffsetTransitionGroup = createFactory(
+  require('./offset-transition-group')
+);
+const { connect } = require('react-redux');
+const $ = require('../selectors');
 
 const RulesSidebar = createClass({
-  displayName: "RulesSidebar",
+  displayName: 'RulesSidebar',
 
   render() {
-    const {
-      rules,
-      ruleProps
-    } = this.props;
+    const { rules, ruleProps } = this.props;
 
     const transition = {
-      transitionName: "rule",
+      transitionName: 'rule',
       transitionAppearOffset: 100,
       transitionEnterTimeout: 200,
       transitionLeaveTimeout: 300,
     };
 
-    return div({className: "rules-sidebar"},
-      OffsetTransitionGroup(transition,
-        ...rules.map((rule, i) => Rule(
-          Object.assign({rule, key: rule.id}, ruleProps)
-        ))
+    return div(
+      { className: 'rules-sidebar' },
+      OffsetTransitionGroup(
+        transition,
+        ...rules.map(rule =>
+          Rule(Object.assign({ rule, key: rule.id }, ruleProps))
+        )
       )
     );
-  }
+  },
 });
 
-module.exports = connect(
-  (state, props) => ({
-    rules: $.matchedRules(state)
-  })
-)(RulesSidebar);
+module.exports = connect(state => ({
+  rules: $.matchedRules(state),
+}))(RulesSidebar);

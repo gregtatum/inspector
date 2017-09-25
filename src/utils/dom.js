@@ -16,7 +16,7 @@ function enableMock() {
   mock = {
     styleSheets: [],
     querySelector: () => {},
-    matchMedia: () => {}
+    matchMedia: () => {},
   };
 
   return mock;
@@ -27,11 +27,11 @@ function disableMock() {
 }
 
 function functionMocker(object, fnName) {
-  return function mockedFunction() {
+  return function mockedFunction(...args) {
     if (mock) {
-      return mock[fnName].apply(mock, arguments);
+      return mock[fnName](...args);
     }
-    return object[fnName].apply(object, arguments);
+    return object[fnName](...args);
   };
 }
 
@@ -42,13 +42,13 @@ function getStyleSheets() {
   return [...document.styleSheets];
 }
 
-const globalDocument = typeof document === "object" ? document : undefined;
-const globalWindow = typeof window === "object" ? window : undefined;
+const globalDocument = typeof document === 'object' ? document : undefined;
+const globalWindow = typeof window === 'object' ? window : undefined;
 
 module.exports = {
   enableMock,
   disableMock,
   getStyleSheets,
-  querySelector: functionMocker(globalDocument, "querySelector"),
-  matchMedia: functionMocker(globalWindow, "matchMedia"),
+  querySelector: functionMocker(globalDocument, 'querySelector'),
+  matchMedia: functionMocker(globalWindow, 'matchMedia'),
 };
