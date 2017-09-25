@@ -3,7 +3,7 @@
 This is a personal experiment on how to build a CSS inspector, and a prototype of what an inspector's state data structure could look like.
 
 * Online: [CSS Inspector](https://gregtatum.github.io/inspector/)
-* Locally: From terminal run `npm install` and then `npm start`.
+* Locally: From terminal, [install yarn](https://yarnpkg.com/lang/en/docs/install/), then run `yarn` and then `yarn start`.
 
 ## Article
 
