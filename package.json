@@ -73,5 +73,26 @@
     "webpack": "^3.6.0",
     "webpack-dev-server": "^2.8.2"
   },
-  "dependencies": {}
+  "dependencies": {
+    "jest": "^21.1.0"
+  },
+  "jest": {
+    "collectCoverageFrom": [
+      "src/**/*.{js,jsx}",
+      "!**/node_modules/**"
+    ],
+    "testEnvironment": "jsdom",
+    "moduleFileExtensions": [
+      "js",
+      "jsx"
+    ],
+    "moduleDirectories": [
+      "node_modules"
+    ],
+    "moduleNameMapper": {
+      "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/src/test/fixtures/mocks/file-mock.js",
+      "\\.(css|less)$": "<rootDir>/src/test/fixtures/mocks/style-mock.js"
+    },
+    "verbose": true
+  }
 }

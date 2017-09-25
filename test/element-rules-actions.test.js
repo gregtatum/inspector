@@ -1,5 +1,4 @@
 const co = require('co');
-const test = require('tape');
 const $ = require('../src/selectors');
 const actions = require('../src/actions/element-rules');
 const { assertDeclaration } = require('./utils');
@@ -21,51 +20,32 @@ const {
   mockCssStyleSheet2,
 } = require('./fixtures/style-sheets');
 
-test('actions.addStyleSheet', t => {
+test('actions.addStyleSheet', () => {
   const store = blankStore();
   store.dispatch(actions.addStyleSheet(mockCssStyleSheet1));
   store.dispatch(actions.addStyleSheet(mockCssStyleSheet2));
 
   const styleSheets = $.styleSheets(store.getState());
 
-  t.equal(styleSheets.size, 2, 'Found 2 stylesheets');
-  t.equal(
-    styleSheets.getIn([0, 'text']),
-    styleSheetText1,
-    'StyleSheet 1 has the proper text.'
-  );
-  t.equal(
-    styleSheets.getIn([1, 'text']),
-    styleSheetText2,
-    'StyleSheet 2 has the proper text.'
-  );
-  t.end();
+  expect(styleSheets.size).toBe(2);
+  expect(styleSheets.getIn([0, 'text'])).toBe(styleSheetText1);
+  expect(styleSheets.getIn([1, 'text'])).toBe(styleSheetText2);
 });
 
-test('actions.setFocusedElement', t => {
+test('actions.setFocusedElement', () => {
   const store = twoStyleSheetsStore();
   store.dispatch(actions.setFocusedElement(mockElement));
 
   const rules = $.matchedRules(store.getState());
   const selectorNames = rules.map(rule => rule.get('selector')).toJS();
 
-  t.assert(
-    selectorNames.includes(matchedSelector1),
-    'First selector was matched.'
-  );
-  t.assert(
-    selectorNames.includes(matchedSelector2),
-    'Second selector was matched.'
-  );
-  t.assert(
-    selectorNames.includes(matchedSelector3),
-    'Third selector was matched.'
-  );
-  t.equal(selectorNames.length, 3, 'Three selectors were found.');
-  t.end();
+  expect(selectorNames.includes(matchedSelector1)).toBeTruthy();
+  expect(selectorNames.includes(matchedSelector2)).toBeTruthy();
+  expect(selectorNames.includes(matchedSelector3)).toBeTruthy();
+  expect(selectorNames.length).toBe(3);
 });
 
-test('actions.editDeclarationName/editDeclarationValue/stopEditingDeclaration', t => {
+test('actions.editDeclarationName/editDeclarationValue/stopEditingDeclaration', () => {
   const store = twoStyleSheetsStore();
   let state;
 
@@ -85,61 +65,44 @@ test('actions.editDeclarationName/editDeclarationValue/stopEditingDeclaration', 
   );
 
   // The initial state is not being edited.
-  t.equal($.isEditingName(state), false, 'The name is not being editing');
-  t.equal($.isEditingValue(state), false, 'The value is not being editing');
-  t.is($.editingDeclaration(state), null, 'No declaration is being editing');
-  t.is($.editingRule(state), null, 'No rule is being editing');
-  t.is($.editingStyleSheet(state), null, 'No styleSheet is being editing');
+  expect($.isEditingName(state)).toBe(false);
+  expect($.isEditingValue(state)).toBe(false);
+  expect($.editingDeclaration(state)).toBe(null);
+  expect($.editingRule(state)).toBe(null);
+  expect($.editingStyleSheet(state)).toBe(null);
 
   store.dispatch(actions.editDeclarationName(rule, declaration));
   state = store.getState();
 
   // Now edit the name.
-  t.equal($.isEditingName(state), true, 'The name is not being editing');
-  t.equal($.isEditingValue(state), false, 'The value is not being editing');
-  t.is(
-    $.editingDeclaration(state),
-    declaration,
-    'No declaration is being editing'
-  );
-  t.is($.editingRule(state), rule, 'No rule is being editing');
-  t.is(
-    $.editingStyleSheet(state),
-    styleSheet,
-    'No styleSheet is being editing'
-  );
+  expect($.isEditingName(state)).toBe(true);
+  expect($.isEditingValue(state)).toBe(false);
+  expect($.editingDeclaration(state)).toBe(declaration);
+  expect($.editingRule(state)).toBe(rule);
+  expect($.editingStyleSheet(state)).toBe(styleSheet);
 
   store.dispatch(actions.editDeclarationValue(rule, declaration));
   state = store.getState();
 
   // Now edit the value.
-  t.equal($.isEditingName(state), false, 'The name is not being editing');
-  t.equal($.isEditingValue(state), true, 'The value is not being editing');
-  t.is(
-    $.editingDeclaration(state),
-    declaration,
-    'No declaration is being editing'
-  );
-  t.is($.editingRule(state), rule, 'No rule is being editing');
-  t.is(
-    $.editingStyleSheet(state),
-    styleSheet,
-    'No styleSheet is being editing'
-  );
+  expect($.isEditingName(state)).toBe(false);
+  expect($.isEditingValue(state)).toBe(true);
+  expect($.editingDeclaration(state)).toBe(declaration);
+  expect($.editingRule(state)).toBe(rule);
+  expect($.editingStyleSheet(state)).toBe(styleSheet);
 
   store.dispatch(actions.stopEditingDeclaration());
   state = store.getState();
 
   // Back to not editing anything.
-  t.equal($.isEditingName(state), false, 'The name is not being editing');
-  t.equal($.isEditingValue(state), false, 'The value is not being editing');
-  t.is($.editingDeclaration(state), null, 'No declaration is being editing');
-  t.is($.editingRule(state), null, 'No rule is being editing');
-  t.is($.editingStyleSheet(state), null, 'No styleSheet is being editing');
-  t.end();
+  expect($.isEditingName(state)).toBe(false);
+  expect($.isEditingValue(state)).toBe(false);
+  expect($.editingDeclaration(state)).toBe(null);
+  expect($.editingRule(state)).toBe(null);
+  expect($.editingStyleSheet(state)).toBe(null);
 });
 
-test('actions.setDeclarationName - basic rewriting', tt => {
+test('actions.setDeclarationName - basic rewriting', () => {
   // Setup the state we want.
   const store = twoStyleSheetsStore();
   const { disableMock } = twoStyleSheetsMock(store);
@@ -160,18 +123,8 @@ test('actions.setDeclarationName - basic rewriting', tt => {
       'The declaration starts out with the correct initial values.'
     );
 
-    t.equals(
-      originalStyleSheet.get('text'),
-      styleSheetText1,
-      'The original stylesheet stored text is unaltered.'
-    );
-    t.equals(
-      originalStyleSheet.get('cssStyleSheet').ownerNode.innerHTML,
-      styleSheetText1,
-      "The original stylesheet element's contents are unaltered."
-    );
-
-    t.end();
+    expect(originalStyleSheet.get('text')).toBe(styleSheetText1);
+    expect(originalStyleSheet.get('cssStyleSheet').ownerNode.innerHTML).toBe(styleSheetText1);
   });
 
   tt.test(
@@ -202,19 +155,10 @@ test('actions.setDeclarationName - basic rewriting', tt => {
         'The declaration value was updated.'
       );
 
-      t.equals(
-        styleSheet.get('text'),
-        text,
-        'The stylesheet stored text was altered.'
-      );
-      t.equals(
-        styleSheet.get('cssStyleSheet').ownerNode.innerHTML,
-        text,
-        "The original stylesheet element's contents were altered."
-      );
+      expect(styleSheet.get('text')).toBe(text);
+      expect(styleSheet.get('cssStyleSheet').ownerNode.innerHTML).toBe(text);
 
       disableMock();
-      t.end();
     })
   );
 
