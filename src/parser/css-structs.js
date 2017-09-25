@@ -38,32 +38,23 @@ function createRule(token: Token): Rule {
       text: getSelectorOffset(token),
     },
     // Array of declaration objects.
-    declarations: null,
+    declarations: [],
     whitespace: {
       beforeSelector: '',
       afterSelector: '',
     },
+    indentation: {
+      selector: '',
+      declaration: '',
+      indentationUnit: '',
+    },
   };
 }
 
-/**
- * Declarations holds information about a CSSStyleDeclaration.
- * https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration
- *
- * @property {string} id            - A unique id that increments from 0.
- * @property {string} name          - The name of the declaration
- *                                      e.g. "margin" or "padding-top"
- * @property {string} value         - The value of the declaration
- *                                      e.g. "0px" or "1px solid red"
- * @property {object} offsets       - The text offsets of the stylesheet's entire
- *                                      text source.
- * @property {array}  offsets.text  - [begin, end] of the entire declaration
- * @property {array}  offsets.name  - [begin, end] of the entire name portion
- * @property {array}  offsets.value - [begin, end] of the entire value portion
- */
 function createDeclaration(): Declaration {
   return {
     id: getDeclarationID(),
+    text: '',
     name: '',
     value: '',
     // priority: "",

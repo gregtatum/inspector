@@ -1,5 +1,13 @@
 /* Assignment in a while condition makes token parsing easier. */
 /* eslint-disable no-cond-assign */
+// @flow
+import type {
+  WhitespaceToken,
+  IdentToken,
+  Token,
+  Lexer,
+} from '../types/parsing';
+import type { MediaQueryRule, Rule, Declaration } from '../types/css';
 
 const { getCSSLexer } = require('./css-lexer');
 
@@ -24,16 +32,16 @@ const {
  * This file collects all of the functions that parse a stylesheet's text into a
  * data structure. The data structure is made up of objects from ./css-structs.js.
  */
-function parseStyleSheet(styleSheetText) {
-  const lexer = getCSSLexer(styleSheetText);
-  return parseRules(lexer);
+function parseStyleSheet(styleSheetText: string) {
+  const lexer: Lexer = getCSSLexer(styleSheetText);
+  return parseRootRules(lexer);
 }
 
-function parseRules(lexer) {
+function parseRootRules(lexer: Lexer): Array<MediaQueryRule | Rule> {
   const rules = [];
 
   while (true) {
-    const { token } = skipWhitespace(lexer);
+    const { token } = skipWhitespace(lexer, null);
     if (!token) {
       break;
     }
@@ -44,7 +52,7 @@ function parseRules(lexer) {
         rules.push(parseMediaQuery(token, lexer));
       } else {
         // Skip until the next semi-colon for cases like `@charset "UTF-8";`
-        findSemicolon(lexer);
+        findSemicolon(lexer, null);
       }
       continue;
     }
@@ -60,41 +68,67 @@ function parseRules(lexer) {
       token.tokenType === 'id' ||
       token.tokenType === 'symbol'
     ) {
-      rules.push(parseSingleRule(token, lexer));
+      const rule = parseSingleRule(token, lexer);
+      if (rule) {
+        rules.push(rule);
+      }
     }
   }
   return rules;
 }
 
-function parseSingleRule(token, lexer) {
+function parseNonRootRules(lexer: Lexer): Array<Rule> {
+  const rules = [];
+
+  while (true) {
+    const { token } = skipWhitespace(lexer, null);
+    if (!token) {
+      break;
+    }
+
+    // A new rule was found
+    if (
+      token.tokenType === 'ident' ||
+      token.tokenType === 'id' ||
+      token.tokenType === 'symbol'
+    ) {
+      const rule = parseSingleRule(token, lexer);
+      if (rule) {
+        rules.push(rule);
+      }
+    }
+  }
+  return rules;
+}
+
+function parseSingleRule(token: Token, lexer: Lexer): Rule | null {
   const rule = createRule(token);
   token = parseSelector(token, lexer, rule);
 
   // Bail out if the next token isn't "{".
-  if (!token || token.text !== '{') {
-    return token;
+  if (!token || (token.tokenType === 'symbol' && token.text !== '{')) {
+    return null;
   }
 
-  const { declarations } = parseDeclarations(lexer);
+  const { declarations } = parseDeclarations(lexer, null);
   rule.declarations = declarations;
   rule.offsets.text[1] = token.endOffset;
   rule.indentation = determineIndentionStrategy(rule);
   return rule;
 }
 
-function parseSelector(token, lexer, rule) {
+function parseSelector(token: Token, lexer: Lexer, rule: Rule): Token {
   let previousToken = token;
   let firstRun = true;
   let whitespaceToken;
 
   while (true) {
-    {
-      const results = skipWhitespace(lexer, previousToken);
-      whitespaceToken = results.whitespaceToken;
-      token = results.token;
-    }
-    if (!token) {
+    const whitespaceResults = skipWhitespace(lexer, previousToken);
+    whitespaceToken = whitespaceResults.whitespaceToken;
+    if (whitespaceResults.token === null) {
       break;
+    } else {
+      token = whitespaceResults.token;
     }
     const { tokenType, text, endOffset } = token;
 
@@ -126,17 +160,21 @@ function parseSelector(token, lexer, rule) {
   return token;
 }
 
-function parseDeclarations(lexer, previousToken) {
+function parseDeclarations(
+  lexer: Lexer,
+  previousToken: Token | null
+): { declarations: Declaration[], previousToken: Token | null } {
   const declarations = [];
-  let token, whitespaceToken;
-
+  let whitespaceToken;
+  // Go ahead and assign this token so Flow infers that this is not ever void.
+  let token = previousToken;
   while (true) {
     {
       const results = skipWhitespace(lexer, previousToken);
       token = results.token;
       whitespaceToken = results.whitespaceToken;
     }
-    if (!token || (token.text === '}' && token.tokenType === 'symbol')) {
+    if (!token || (token.tokenType === 'symbol' && token.text === '}')) {
       break;
     }
     if (token.tokenType === 'ident') {
@@ -146,11 +184,17 @@ function parseDeclarations(lexer, previousToken) {
         lexer
       );
 
+      if (prevToken === null) {
+        throw new Error(
+          'No previous token was returned wen parsing a single declaration.'
+        );
+      }
+
       if (declaration) {
         declarations.push(declaration);
-      } else if (prevToken.text !== '}') {
+      } else if (prevToken.tokenType === 'symbol' && prevToken.text !== '}') {
         // Uh oh, no declaration was found. This means there was probably a problem.
-        findDeclarationClose(lexer);
+        findDeclarationClose(lexer, prevToken);
       }
       // TODO, handle comments here
     } else if (token.tokenType === 'comment') {
@@ -162,30 +206,46 @@ function parseDeclarations(lexer, previousToken) {
   return { declarations, previousToken: token };
 }
 
-function parseSingleDeclaration(nameToken, whitespaceBeforeName, lexer) {
+function parseSingleDeclaration(
+  nameToken: IdentToken,
+  whitespaceBeforeName: WhitespaceToken | null,
+  lexer: Lexer
+): { declaration: Declaration | null, previousToken: Token | null } {
   // Create the declaration and set the name and basic info
   const declaration = createDeclaration();
 
-  const { token: colon, whitespaceToken: whitespaceAfterName } = skipWhitespace(
-    lexer
-  );
+  const {
+    token: maybeColon,
+    whitespaceToken: whitespaceAfterName,
+  } = skipWhitespace(lexer, null);
+
+  const colon =
+    maybeColon && maybeColon.tokenType === 'symbol' && maybeColon.text === ':'
+      ? maybeColon
+      : null;
 
   // Double check that the colon is correct
-  if (colon.tokenType !== 'symbol' || colon.text !== ':') {
+  if (colon === null) {
     return {
       declaration: null,
-      previousToken: colon,
+      previousToken: maybeColon,
     };
   }
 
   const {
     token: valueStartToken,
     whitespaceToken: whitespaceBeforeValue,
-  } = skipWhitespace(lexer);
+  } = skipWhitespace(lexer, null);
 
-  let valueEndToken, valueEndPreviousToken, whitespaceAfterValue;
+  let valueEndToken, valueEndPreviousToken;
+  let whitespaceAfterValue = null;
   if (!isDeclarationClose(valueStartToken)) {
     const result = findDeclarationClose(lexer, valueStartToken);
+    if (!result.previousToken) {
+      throw new Error(
+        'A previous token should have been found while looking for a declaration close.'
+      );
+    }
     valueEndToken = result.token;
     valueEndPreviousToken = result.previousToken;
     whitespaceAfterValue = result.whitespaceToken;
@@ -268,17 +328,21 @@ function parseSingleDeclaration(nameToken, whitespaceBeforeName, lexer) {
   return { declaration, previousToken: lastToken };
 }
 
-function parseMediaQuery(token, lexer) {
+function parseMediaQuery(token: Token, lexer: Lexer): MediaQueryRule {
   const mediaQueryRule = createMediaQueryRule();
   mediaQueryRule.condition = parseMediaQueryCondition(token, lexer);
-  mediaQueryRule.rules = parseRules(lexer);
+  mediaQueryRule.rules = parseNonRootRules(lexer);
   return mediaQueryRule;
 }
 
-function parseMediaQueryCondition(token, lexer) {
+function parseMediaQueryCondition(aToken: Token, lexer: Lexer): string | null {
   let condition = '@media';
-  let previousToken = token;
-  while ((token = skipWhitespace(lexer))) {
+  let previousToken = aToken;
+  while (true) {
+    const { token } = skipWhitespace(lexer, null);
+    if (token === null) {
+      return null;
+    }
     const { tokenType, text } = token;
 
     if (tokenType === 'symbol') {
@@ -307,7 +371,8 @@ function parseMediaQueryCondition(token, lexer) {
 
 module.exports = {
   parseStyleSheet,
-  parseRules,
+  parseRootRules,
+  parseNonRootRules,
   parseSingleRule,
   parseSelector,
   parseDeclarations,

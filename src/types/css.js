@@ -1,4 +1,5 @@
 // @flow
+import type { TextOffset } from './parsing';
 
 /**
  * This file contains a list of types that represent objects and information in the
@@ -12,27 +13,33 @@ export type MediaQueryRuleId = number;
 export type RuleId = number;
 export type DeclarationId = number;
 
-type OffsetBegin = number;
-type OffsetEnd = number;
-export type TextOffset = [OffsetBegin, OffsetEnd];
-
 /**
  * Represents a CSSMediaRule.
  * https://developer.mozilla.org/en-US/docs/Web/API/CSSMediaRule
  */
-export type MediaQueryRule = {
+export type MediaQueryRule = {|
   id: MediaQueryRuleId,
   // The text of the condition of the rule, e.g. "@media screen and (min-width: 1200px)"
   condition: string | null,
   // The rules that make up the media query.
   rules: Rule[] | null,
+|};
+
+/**
+ * TODO - I think the intent here was to provide information about the indentation
+ * of a given rule.
+ */
+export type IndentationStrategy = {
+  selector: string,
+  declaration: string,
+  indentationUnit: string,
 };
 
 /**
  * Represents a CSSStyleRule.
  * https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleRule
  */
-export type Rule = {
+export type Rule = {|
   id: RuleId,
   // The selector text for the rule
   selector: string,
@@ -41,7 +48,13 @@ export type Rule = {
     selector: TextOffset,
     text: TextOffset,
   },
-};
+  declarations: Declaration[],
+  whitespace: {
+    beforeSelector: string,
+    afterSelector: string,
+  },
+  indentation: IndentationStrategy,
+|};
 
 /**
  * Represents a CSSStyleDeclaration.
@@ -52,6 +65,8 @@ export type Declaration = {
   id: DeclarationId,
   // The name of the declaration, e.g. "margin" or "padding-top".
   name: string,
+  // The entire text of the declaration.
+  text: string,
   // The value of the declaration, e.g. "0px" or "1px solid red".
   value: string,
   // The text offsets of the stylesheet's entire text source.
