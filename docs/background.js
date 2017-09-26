@@ -60,15 +60,20 @@
 /******/ 	__webpack_require__.p = "/";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 0);
+/******/ 	return __webpack_require__(__webpack_require__.s = 150);
 /******/ })
 /************************************************************************/
-/******/ ([
-/* 0 */
-/***/ (function(module, exports) {
+/******/ ({
 
-throw new Error("Module build failed: ReferenceError: Unknown plugin \"transform-runtime\" specified in \"/Users/gregorytatum/me/inspector/package.json\" at 0, attempted to resolve relative to \"/Users/gregorytatum/me/inspector\"\n    at /Users/gregorytatum/me/inspector/node_modules/babel-core/lib/transformation/file/options/option-manager.js:180:17\n    at Array.map (native)\n    at Function.normalisePlugins (/Users/gregorytatum/me/inspector/node_modules/babel-core/lib/transformation/file/options/option-manager.js:158:20)\n    at OptionManager.mergeOptions (/Users/gregorytatum/me/inspector/node_modules/babel-core/lib/transformation/file/options/option-manager.js:234:36)\n    at OptionManager.init (/Users/gregorytatum/me/inspector/node_modules/babel-core/lib/transformation/file/options/option-manager.js:368:12)\n    at File.initOptions (/Users/gregorytatum/me/inspector/node_modules/babel-core/lib/transformation/file/index.js:212:65)\n    at new File (/Users/gregorytatum/me/inspector/node_modules/babel-core/lib/transformation/file/index.js:135:24)\n    at Pipeline.transform (/Users/gregorytatum/me/inspector/node_modules/babel-core/lib/transformation/pipeline.js:46:16)\n    at transpile (/Users/gregorytatum/me/inspector/node_modules/babel-loader/lib/index.js:50:20)\n    at Object.module.exports (/Users/gregorytatum/me/inspector/node_modules/babel-loader/lib/index.js:175:20)");
+/***/ 150:
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+console.log('!!! background script loaded');
 
 /***/ })
-/******/ ]);
-//# sourceMappingURL=49bb8a56056e36ff08f7.bundle.js.map
+
+/******/ });
+//# sourceMappingURL=background.js.map

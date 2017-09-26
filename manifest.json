@@ -1,0 +1,18 @@
+{
+  "description": "An inspector demo.",
+  "manifest_version": 2,
+  "name": "inspector-ext",
+  "version": "1.0",
+  "author": "Greg Tatum",
+  "homepage_url": "https://github.com/gregtatum/inspector",
+  "icons": {
+    "48": "icons/star.png"
+  },
+  "background": {
+    "scripts": ["docs/background.js"]
+  },
+  "permissions": [
+      "<all_urls>"
+  ],
+  "devtools_page": "docs/devtools.html"
+}

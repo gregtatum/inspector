@@ -5,6 +5,9 @@ module.exports = {
     "node": true,
     "jest": true
   },
+  "globals": {
+    "browser": true
+  },
   "parser": "babel-eslint",
   "extends": [
     "eslint:recommended",
