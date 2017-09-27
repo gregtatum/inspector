@@ -3,23 +3,11 @@ const includes = [path.join(__dirname, 'src'), path.join(__dirname, 'assets')];
 const es6modulePaths = [];
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
-module.exports = {
-  entry: {
-    background: path.join(__dirname, 'src/background/index.js'),
-    devtools: path.join(__dirname, 'src/devtools/index.js'),
-    panel: path.join(__dirname, 'src/panel/index.js'),
-  },
-  plugins: [
-    new HtmlWebpackPlugin({
-      title: 'perf.html',
-      template: 'assets/index.html',
-      // favicon: "assets/favicon.png",
-    }),
-  ],
+const baseConfig = {
   output: {
     path: path.resolve(__dirname, 'docs'),
     filename: '[name].js',
-    publicPath: '/',
+    publicPath: '/docs',
   },
   devtool: 'source-map',
   module: {
@@ -32,3 +20,25 @@ module.exports = {
     ],
   },
 };
+
+const panel = Object.assign({}, baseConfig, {
+  entry: {
+    panel: path.join(__dirname, 'src/panel/index.js'),
+  },
+  plugins: [
+    new HtmlWebpackPlugin({
+      title: 'perf.html',
+      template: 'assets/index.html',
+      // favicon: "assets/favicon.png",
+    }),
+  ],
+});
+const otherScripts = Object.assign({}, baseConfig, {
+  entry: {
+    background: path.join(__dirname, 'src/background/index.js'),
+    devtools: path.join(__dirname, 'src/devtools/index.js'),
+    content: path.join(__dirname, 'src/content/index.js'),
+  },
+});
+
+module.exports = [panel, otherScripts];

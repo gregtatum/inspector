@@ -1,10 +1,37 @@
-const React = require('react');
-const ReactDOM = require('react-dom');
-const { Provider } = require('react-redux');
-const createStore = require('./store.js');
-const app = React.createElement(require('./components/app'));
+// @flow
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { Provider } from 'react-redux';
+import createStore from './store.js';
+import app from './components/app';
+import { logPanel as log } from '../utils/log';
+
 (function main() {
   const store = createStore({ logging: true });
-  const reduxApp = React.createElement(Provider, { store }, app);
+  connectToPageViaBackground();
+
+  const reduxApp = React.createElement(
+    Provider,
+    { store },
+    React.createElement(app)
+  );
   ReactDOM.render(reduxApp, document.querySelector('#app'));
 })();
+
+log('sending connect');
+// Create a connection to the background page
+
+function connectToPageViaBackground() {
+  return new Promise(resolve => {
+    const background = browser.runtime.connect({
+      name: 'panel-' + browser.devtools.inspectedWindow.tabId,
+    });
+
+    background.onMessage.addListener(message => {
+      log('found message', message);
+      if (typeof message === 'object' && message.type === 'PORTS_PAIRED') {
+        resolve(background);
+      }
+    });
+  });
+}

@@ -1,7 +1,8 @@
 // @flow
 /* global browser */
-console.log('!!! devtools.js');
-debugger;
+import { logDevtools as log } from '../utils/log';
+log('loaded');
+
 /**
  * Create a panel, and add listeners for panel show/hide events.
  */

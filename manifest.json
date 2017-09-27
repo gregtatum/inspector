@@ -11,6 +11,22 @@
   "background": {
     "scripts": ["docs/background.js"]
   },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["docs/content.js"]
+    }
+  ],
+  "web_accessible_resources": [
+    "docs/panel.js",
+    "docs/panel.js.map",
+    "docs/content.js.map",
+    "docs/background.js.map",
+    "docs/style.css",
+    "docs/variables.css",
+    "docs/splitters.css",
+    "docs/common.css"
+  ],
   "permissions": [
       "<all_urls>"
   ],
